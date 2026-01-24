@@ -24,7 +24,7 @@ const Navbar = () => {
         Neighbourly
       </h1>
         <NavLink
-        to={"/"}
+        to={"/dashboard"}
         className="ml-auto rounded-full bg-blue-500 p-3 mx-5 text-white">
             Home
         </NavLink>

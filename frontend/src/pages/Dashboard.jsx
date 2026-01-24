@@ -57,8 +57,8 @@ const Dashboard = () => {
           </button>
         </div>
 
-        <div
-          onClick={() => alert("Search / Book Service page (not implemented)")}
+        <Link
+          to={"/search-services"}
           className="cursor-pointer bg-white p-6 rounded-lg shadow hover:shadow-lg transition flex flex-col justify-between"
         >
           <h3 className="text-2xl font-semibold mb-2">
@@ -67,10 +67,10 @@ const Dashboard = () => {
           <p className="text-gray-700 mb-4">
             Browse services offered by your neighbors and book what you need.
           </p>
-          <Link to="/search-services" className="mt-auto bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+          <div className="mt-auto bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
             Search Services
-          </Link>
-        </div>
+          </div>
+        </Link>
       </section>
 
       {/* Your Services */}
