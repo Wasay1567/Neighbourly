@@ -57,17 +57,6 @@ const SearchServicePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      {/* Navbar */}
-      <nav className="bg-white shadow-md p-4 flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-blue-600">Search Services</h1>
-        <button
-          onClick={handleBack}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-        >
-          Back
-        </button>
-      </nav>
-
       <SearchForm onSearch={handleSearch} />
 
       {loading ? (
