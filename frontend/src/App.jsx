@@ -6,20 +6,20 @@ import Dashboard from "./pages/Dashboard";
 import CreateForm from "./components/CreateForm";
 import SearchServicePage from "./pages/SearchServicePage";
 import Layout from "./layout/Layout";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
 
 const App = () => {
   return (
+    <Provider store={store}>
     <Routes>
-      {/* public */}
       <Route path="/" element={<LoginPage />} />
-      {/* Layout */}
       <Route element={<Layout />} >
         <Route path="/dashboard" element={<Dashboard />} />
-        {/* <Route path="/create-service" element= {<CreateForm />}/> */}
         <Route path="/search-services" element={<SearchServicePage />} />
-
       </Route>
     </Routes>
+    </Provider>
   );
 };
 

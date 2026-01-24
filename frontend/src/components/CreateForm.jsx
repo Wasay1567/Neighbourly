@@ -1,8 +1,12 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { API_URL } from "../conf/conf.js";
+import { X } from "lucide-react"; // Importing the icon you used in Dashboard
 
-const CreateForm = ({ onSuccess, onClose }) => {
+const CreateForm = ({ setServices, closeForm }) => {
+  const { userData } = useSelector((state) => state.user);
   const {
     register,
     handleSubmit,
@@ -12,122 +16,109 @@ const CreateForm = ({ onSuccess, onClose }) => {
 
   const onSubmit = async (data) => {
     try {
-      const res = await fetch("https://jsonplaceholder.typicode.com/posts", {
+      const res = await fetch(`${API_URL}/services/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
-          status: "Active",
+          id: null,
+          title: data.title,
+          desc: data.description,
+          category: data.category,
+          authorID: userData.ID,
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to create service");
-      }
+      if (!res.ok) throw new Error("Failed to create service");
 
+      const apiResponse = await res.json();
       toast.success("Service created successfully 🎉");
 
-      onSuccess({
-        id: Date.now(),
-        ...data,
-        status: "Active",
-      });
+      // CRITICAL FIX: 
+      // Your Dashboard expects UPPERCASE keys (TITLE, DESCRIPTION), 
+      // but your API response might be different. 
+      // We normalize the new object here for the local state update.
+      const newServiceOptimistic = {
+        ID: apiResponse.id || apiResponse.ID || Date.now(), // Fallback if API doesn't return ID
+        TITLE: data.title,
+        DESCRIPTION: data.description,
+        CATEGORY: data.category,
+        AUTHORID: userData.ID
+      };
+
+      setServices((prev) => [newServiceOptimistic, ...prev]);
 
       reset();
-      onClose?.();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong ❌");
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Something went wrong ❌");
     }
   };
 
   return (
-    <div className="max-w-lg w-full bg-white p-8 rounded-lg shadow-lg relative">
+    // This Div is the "Card"
+    <div className="max-w-lg w-full bg-white p-8 rounded-lg shadow-2xl relative animate-in fade-in zoom-in duration-200">
       <button
-        onClick={onClose}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        type="button" // FIX: Prevent form submission on close
+        onClick={closeForm}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
       >
-        ✕
+        <X size={24} />
       </button>
 
-      <h2 className="text-2xl font-bold mb-6 text-center">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
         Create a New Service
       </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Title */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <input
-            placeholder="Title"
-            className="w-full border px-4 py-2 rounded"
+            placeholder="e.g. Lawn Mowing"
             {...register("title", { required: "Title is required" })}
+            className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           />
           {errors.title && (
-            <p className="text-red-500 text-sm">{errors.title.message}</p>
+            <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
           )}
         </div>
 
-        {/* Description */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
-            placeholder="Description"
-            className="w-full border px-4 py-2 rounded"
+            rows="4"
+            placeholder="Describe what you are offering..."
             {...register("description", {
-              required: "Description is required",
-              minLength: { value: 10, message: "Minimum 10 characters" },
+              required: "Description required",
+              minLength: { value: 10, message: "Must be at least 10 chars" },
             })}
+            className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           />
           {errors.description && (
-            <p className="text-red-500 text-sm">
+            <p className="text-red-500 text-sm mt-1">
               {errors.description.message}
             </p>
           )}
         </div>
 
-        {/* Price */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
           <input
-            type="number"
-            placeholder="Price"
-            className="w-full border px-4 py-2 rounded"
-            {...register("price", {
-              required: "Price is required",
-              min: { value: 1, message: "Price must be greater than 0" },
-            })}
-          />
-          {errors.price && (
-            <p className="text-red-500 text-sm">{errors.price.message}</p>
-          )}
-        </div>
-
-        {/* Category */}
-        <div>
-          <input
-            placeholder="Category"
-            className="w-full border px-4 py-2 rounded"
+            placeholder="e.g. Gardening, Tutoring"
             {...register("category", { required: "Category is required" })}
+            className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           />
           {errors.category && (
-            <p className="text-red-500 text-sm">{errors.category.message}</p>
-          )}
-        </div>
-
-        {/* Location */}
-        <div>
-          <input
-            placeholder="Location"
-            className="w-full border px-4 py-2 rounded"
-            {...register("location", { required: "Location is required" })}
-          />
-          {errors.location && (
-            <p className="text-red-500 text-sm">{errors.location.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.category.message}
+            </p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+          className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isSubmitting ? "Creating..." : "Create Service"}
         </button>

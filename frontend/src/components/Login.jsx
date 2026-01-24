@@ -1,35 +1,102 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { API_URL } from "../conf/conf.js";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { login } from "@/features/userSlice.js";
+import { useNavigate } from "react-router-dom";
 
-const Login = ({onLogin}) => {
+const Login = () => {
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors }} = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
-  const onSubmit = (data) => {
+  const onSubmit = async ({ name, email }) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onLogin(data);
+    try {
+      //check if user exists
+      const res = await fetch(`${API_URL}/users/retrieve`);
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const users = await res.json();
+
+      let user = users.find(u => u.EMAIL === email);
+
+      if (!user) {
+        //if user doesn't exist, create
+        const createRes = await fetch(`${API_URL}/users/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email }),
+        });
+
+        if (!createRes.ok) throw new Error("Failed to create user");
+        user = await createRes.json();
+      }
+
+      //successful login or signup
+      dispatch(login({userData: user}))
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Something went wrong!");
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
-  const communityLinkMock = () => {
-    alert("Link to join the community (Not implemented yet)")
-  }
-  
+//   alt functionn
+    const onSubmitAlt = async ({ name, email }) => {
+    setIsLoading(true);
+    try {
+      // DEV MODE: skip API, just create a fake user
+      const fakeUser = {
+        ID: Math.floor(Math.random() * 1000), // random ID
+        NAME: name,
+        EMAIL: email
+      };
+
+      // simulate a small delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // pass the fake user to parent
+      dispatch(login(fakeUser));
+      navigate('/dashboard')
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Something went wrong!");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
   return (
-    <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
+    <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow border border-gray-100">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Welcome to Neighbourly</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Login to manage your listings and bookings.
+          Enter your name and email to join or continue.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        
-        {/* Email Field */}
+      <form onSubmit={handleSubmit(onSubmitAlt)} className="space-y-5">
+        {/* name field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Name
+          </label>
+          <input
+            type="text"
+            {...register("name", { required: "Name is required" })}
+            className={`w-full px-4 py-3 rounded-lg border outline-none
+              ${errors.name ? "border-red-500" : "border-gray-200 focus:border-emerald-500"}`}
+            placeholder="Your Name"
+          />
+          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+        </div>
+
+        {/* email field */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email
@@ -38,77 +105,23 @@ const Login = ({onLogin}) => {
             type="email"
             {...register("email", {
               required: "Email is required",
-              pattern: {
-                value: /\S+@\S+\.\S+/,
-                message: "Please enter a valid email address",
-              },
+              pattern: { value: /\S+@\S+\.\S+/, message: "Enter a valid email" },
             })}
-            className={`w-full px-4 py-3 rounded-lg border outline-none transition-all 
-              ${errors.email 
-                ? "border-red-500 focus:ring-2 focus:ring-red-200" 
-                : "border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-              }`}
+            className={`w-full px-4 py-3 rounded-lg border outline-none
+              ${errors.email ? "border-red-500" : "border-gray-200 focus:border-emerald-500"}`}
             placeholder="name@neighbourhood.com"
           />
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-500 font-medium">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
-
-        {/* Password Field */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            {...register("password", {
-              required: "Password is required",
-              minLength: {
-                value: 6,
-                message: "Password must be at least 6 characters",
-              },
-            })}
-            className={`w-full px-4 py-3 rounded-lg border outline-none transition-all 
-              ${errors.password 
-                ? "border-red-500 focus:ring-2 focus:ring-red-200" 
-                : "border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-              }`}
-            placeholder="••••••••"
-          />
-          {errors.password && (
-            <p className="mt-1 text-xs text-red-500 font-medium">
-              {errors.password.message}
-            </p>
-          )}
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg transition-all transform active:scale-[0.98] flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg disabled:opacity-70"
         >
-          {isLoading ? (
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Verifying...</span>
-            </div>
-          ) : (
-            "Sign In"
-          )}
+          {isLoading ? "Processing..." : "Continue"}
         </button>
       </form>
-
-      <div className="mt-6 text-center text-sm text-gray-500">
-        New to the neighbourhood?{" "}
-        <div
-        onClick={communityLinkMock}
-        className="text-emerald-600 font-semibold hover:underline">
-          Join the community
-        </div>
-      </div>
     </div>
   );
 };
