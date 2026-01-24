@@ -4,10 +4,12 @@ import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
 import { API_URL } from "../conf/conf.js";
+import { useNavigate } from "react-router-dom";
 
 const BookingModal = ({ service, onClose }) => {
   const user = useSelector((state) => state.user.userData);
-  
+    const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -41,8 +43,15 @@ const BookingModal = ({ service, onClose }) => {
         throw new Error(responseData.error || "Booking failed");
       }
 
-      toast.success("Request sent successfully! 🚀");
+      toast.success("Request sent successfully!");
       onClose(); // Close the modal
+      navigate("/payment", {
+         state: {
+             bookingId: responseData.data.bookingId,
+             serviceTitle: service.TITLE,
+             amount: service.priceAmount || 500,
+             providerName: "Service Provider Inc."
+         } });
     } catch (err) {
       toast.error(err.message);
     }
