@@ -24,7 +24,7 @@ const RegisterPage = () => {
         role: data.role, 
         firstName: data.firstName, 
         lastName: data.lastName,
-        phone: data.phone, // <--- Now gets the real value
+        phone: data.phone,
         bio: "" 
       };
 
@@ -34,7 +34,6 @@ const RegisterPage = () => {
       if (token) {
         localStorage.setItem("token", token);
         
-        // Data Normalization (Ensuring ID/ROLE work everywhere)
         const completeUser = { 
             ...apiUser, 
             id: apiUser.id,

@@ -14,7 +14,6 @@ const UserDashboard = () => {
   
   const { userData } = useSelector((state) => state.user);
   
-  // 1. Robust Provider Check
   // Check both keys and normalize to lowercase
   const rawRole = userData?.ROLE || userData?.role || '';
   const isProvider = rawRole.toLowerCase() === 'provider' || rawRole.toLowerCase() === 'admin';

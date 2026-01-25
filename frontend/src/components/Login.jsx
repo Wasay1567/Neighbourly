@@ -41,7 +41,7 @@ const Login = () => {
       // 3. Store & State
       localStorage.setItem("token", token);
       
-      // Normalize User Data for Redux (Map backend fields to what UI expects)
+      // Normalize User Data for Redux
       const normalizedUser = {
         ...user,
         NAME: user.firstName ? `${user.firstName} ${user.lastName}` : user.email,
