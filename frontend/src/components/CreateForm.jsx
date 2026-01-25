@@ -2,10 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
-import { API_URL } from "../conf/conf.js";
 import { X, MapPin, Loader2, Tag } from "lucide-react"; 
 import useGeoLocation from "../hooks/useGeoLocation";
-import useMetaData from "../hooks/useMetaData"; // <--- Import new hook
+import useMetaData from "../hooks/useMetaData"; 
 import api from "../utils/api";
 
 const CreateForm = ({ setServices, closeForm }) => {
@@ -13,9 +12,8 @@ const CreateForm = ({ setServices, closeForm }) => {
   
   // 1. Hooks
   const { location, getLocation } = useGeoLocation();
-  const { categories, loading: catsLoading } = useMetaData(); // Fetch dynamic categories
-  
-  const [neighborhoodName, setNeighborhoodName] = useState(null); // Store detected neighborhood
+  const { categories, loading: catsLoading } = useMetaData(); 
+  const [neighborhoodName, setNeighborhoodName] = useState(null); 
 
   const {
     register,
@@ -29,16 +27,14 @@ const CreateForm = ({ setServices, closeForm }) => {
     getLocation();
   }, []);
 
-  // New Effect: When coordinates arrive, ask backend "Where am I?"
   useEffect(() => {
     const identifyNeighborhood = async () => {
         if (location.loaded && location.coordinates.lat) {
             try {
-                // Hit your new Stage 2 endpoint
                 const { data } = await api.get(`/neighborhoods/find?lat=${location.coordinates.lat}&lng=${location.coordinates.lng}`);
                 setNeighborhoodName(data.data.neighborhood.name);
             } catch (err) {
-                console.log("Could not identify specific neighborhood (H3 index not found)");
+                console.log("Could not identify specific neighborhood");
                 setNeighborhoodName(null);
             }
         }
@@ -46,44 +42,77 @@ const CreateForm = ({ setServices, closeForm }) => {
     identifyNeighborhood();
   }, [location.loaded, location.coordinates.lat]);
 
+  // 3. The Submit Handler (FIXED)
   const onSubmit = async (data) => {
     if (!location.loaded || !location.coordinates.lat) {
-      toast.error("We need your location to list this service!");
+      toast.error("Location is required. Please allow GPS access.");
       getLocation(); 
       return;
     }
 
     try {
+      // SAFEGUARD 1: Ensure Category is a valid Integer
+      const catId = parseInt(data.category);
+      if (isNaN(catId)) {
+          toast.error("Please select a valid category");
+          return;
+      }
+
+      // SAFEGUARD 2: Generate fallback address
+      const lat = parseFloat(location.coordinates.lat);
+      const lng = parseFloat(location.coordinates.lng);
+      const autoAddress = `Near GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+      // Construct Payload matching Service.create() arguments
       const payload = {
         title: data.title,
-        desc: data.description,
-        categoryId: parseInt(data.category), // Send ID, not name
-        authorID: userData.ID,
-        latitude: location.coordinates.lat,
-        longitude: location.coordinates.lng,
+        
+        // Match Backend: 'description' AND 'shortDescription'
+        description: data.description,
+        shortDescription: data.description.substring(0, 150), 
+        
+        categoryId: catId,
+        
+        // Match Backend: priceAmount (not just 'price')
         priceAmount: parseFloat(data.price),
-        serviceRadiusKm: 5, 
+        priceUnit: 'hour', // Default required by DB
+        
+        // Match Backend: Location Fields for 'addresses' table
+        latitude: lat,
+        longitude: lng,
+        streetAddress: autoAddress,
+        postalCode: "00000",       //Required by DB schema
+        cityId: 1,    
+        neighborhoodId: 1,
+        
+        serviceRadiusKm: 5,
+        durationMinutes: 60
       };
+
+      console.log("Sending Service Payload:", payload); // Debugging
 
       const res = await api.post('/services', payload); 
-      toast.success(`Service listed in ${neighborhoodName || 'your area'}! 📍`);
+      toast.success(`Service listed successfully!`);
 
       // Optimistic Update
-      const newServiceOptimistic = {
-        ID: Date.now(),
-        TITLE: data.title,
-        DESCRIPTION: data.description,
-        CATEGORY: categories.find(c => c.id == data.category)?.name || "Service",
-        AUTHORID: userData.ID,
-        neighborhood: neighborhoodName // Display this on card if you want
-      };
+      if (setServices) {
+          const newServiceOptimistic = {
+            id: res.data.data?.service?.id || Date.now(),
+            title: data.title,
+            description: data.description,
+            category: categories.find(c => c.id === catId)?.name || "Service",
+            priceAmount: payload.priceAmount,
+            serviceRadiusKm: payload.serviceRadiusKm
+          };
+          setServices((prev) => [newServiceOptimistic, ...prev]);
+      }
 
-      setServices((prev) => [newServiceOptimistic, ...prev]);
       reset();
       closeForm();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to create service");
+      console.error("Create Service Error:", err);
+      const msg = err.response?.data?.message || "Failed to create service. Check server logs.";
+      toast.error(msg);
     }
   };
 
@@ -106,7 +135,7 @@ const CreateForm = ({ setServices, closeForm }) => {
         {/* --- LOCATION BADGE --- */}
         <div className={`p-3 rounded-lg flex items-center gap-3 text-sm ${
             neighborhoodName 
-                ? "bg-purple-50 text-purple-700 border border-purple-100" // Verified Neighborhood
+                ? "bg-purple-50 text-purple-700 border border-purple-100" 
                 : location.loaded 
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
                     : "bg-blue-50 text-blue-600 border border-blue-100"
@@ -114,12 +143,12 @@ const CreateForm = ({ setServices, closeForm }) => {
             {neighborhoodName ? (
                 <>
                     <MapPin size={18} className="shrink-0" />
-                    <span className="font-bold">Verified Zone: {neighborhoodName}</span>
+                    <span className="font-bold">Zone: {neighborhoodName}</span>
                 </>
             ) : location.loaded ? (
                 <>
                     <MapPin size={18} className="shrink-0" />
-                    <span>GPS Tagged: {location.coordinates.lat.toFixed(4)}, {location.coordinates.lng.toFixed(4)}</span>
+                    <span>GPS: {location.coordinates.lat.toFixed(4)}, {location.coordinates.lng.toFixed(4)}</span>
                 </>
             ) : (
                 <>
@@ -139,7 +168,7 @@ const CreateForm = ({ setServices, closeForm }) => {
           />
         </div>
 
-        {/* Category (DYNAMIC DROPDOWN) */}
+        {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
           <div className="relative">
@@ -175,8 +204,9 @@ const CreateForm = ({ setServices, closeForm }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate ($)</label>
             <input
                 type="number"
+                step="0.01"
                 placeholder="25.00"
-                {...register("price", { required: "Required" })}
+                {...register("price", { required: "Required", min: 1 })}
                 className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
             />
         </div>

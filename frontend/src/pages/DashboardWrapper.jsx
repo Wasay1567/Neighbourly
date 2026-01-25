@@ -13,7 +13,14 @@ const DashboardWrapper = () => {
     return <div className="p-10 text-center text-xl tracking-tight">Please log in.</div>;
   }
 
-  const role = userData.ROLE?.toUpperCase();
+  const role = userData.role?.toUpperCase();
+
+  console.log("------------------------------------------------");
+  console.log("DASHBOARD ROUTING DEBUG");
+  console.log("1. Raw Role from Redux:", role);
+  console.log("2. Normalized Role:", role);
+  console.log("3. Is Moderator?", role === 'MODERATOR');
+  console.log("------------------------------------------------");
 
   // Ensure these cases match the mock data in Login.jsx
   switch (role) {

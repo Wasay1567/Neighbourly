@@ -48,7 +48,7 @@ const Login = () => {
         ROLE: user.role ? user.role.toUpperCase() : 'USER'
       };
 
-      dispatch(login({ userData: normalizedUser }));
+      dispatch(login(normalizedUser));
 
       toast.success(`Welcome back!`);
       
