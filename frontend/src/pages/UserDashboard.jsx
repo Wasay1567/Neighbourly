@@ -24,7 +24,7 @@ const UserDashboard = () => {
   // 2. Fetch Services (Only if Provider)
   useEffect(() => {
     const fetchMyServices = async () => {
-        if (!isProvider) return; // Skip for Seekers
+        if (!isProvider) return; //skip for Seekers
 
         try {
             setLoading(true);

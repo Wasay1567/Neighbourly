@@ -63,21 +63,16 @@ const CreateForm = ({ setServices, closeForm }) => {
       const lng = parseFloat(location.coordinates.lng);
       const autoAddress = `Near GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-      // Construct Payload matching Service.create() arguments
       const payload = {
         title: data.title,
         
-        // Match Backend: 'description' AND 'shortDescription'
         description: data.description,
         shortDescription: data.description.substring(0, 150), 
         
         categoryId: catId,
         
-        // Match Backend: priceAmount (not just 'price')
         priceAmount: parseFloat(data.price),
-        priceUnit: 'hour', // Default required by DB
-        
-        // Match Backend: Location Fields for 'addresses' table
+        priceUnit: 'hour', // Default required by bacend
         latitude: lat,
         longitude: lng,
         streetAddress: autoAddress,
