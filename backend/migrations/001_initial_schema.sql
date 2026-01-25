@@ -71,9 +71,9 @@ CREATE TABLE neighborhoods (
     id SERIAL PRIMARY KEY,
     city_id INTEGER NOT NULL REFERENCES cities(id),
     name VARCHAR(150) NOT NULL,
-    slug VARCHAR(150) UNIQUE NOT NULL,
+    slug VARCHAR(150),
     description TEXT,
-    h3_resolution INTEGER DEFAULT 9,
+    h3_resolution INTEGER DEFAULT 10,
     h3_cells TEXT[], -- Array of H3 hexes covering this neighborhood
     boundary_geojson JSONB, -- Optional: store boundary for visualization
     is_active BOOLEAN DEFAULT TRUE,
@@ -458,6 +458,13 @@ INSERT INTO role_permissions (role, permission_id)
 SELECT 'admin', id FROM permissions;
 
 -- Insert sample service categories
+-- Insert sample cities (Pakistan)
+INSERT INTO cities (name, state_province, country, country_code, timezone) VALUES
+('Karachi', 'Sindh', 'Pakistan', 'PK', 'Asia/Karachi'),
+('Lahore', 'Punjab', 'Pakistan', 'PK', 'Asia/Karachi'),
+('Islamabad', 'Islamabad Capital Territory', 'Pakistan', 'PK', 'Asia/Karachi');
+
+
 INSERT INTO service_categories (name, slug, description) VALUES
 ('Home Services', 'home-services', 'Services related to home maintenance and improvement'),
 ('Education & Tutoring', 'education-tutoring', 'Educational and tutoring services'),

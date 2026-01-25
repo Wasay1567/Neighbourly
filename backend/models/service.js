@@ -90,32 +90,39 @@ class Service {
         AND sl.status = 'active'
         AND sl.deleted_at IS NULL
         AND u.status = 'active'
+        AND (
+          6371 * acos(
+            cos(radians($1)) * cos(radians(a.latitude)) *
+            cos(radians(a.longitude) - radians($2)) +
+            sin(radians($1)) * sin(radians(a.latitude))
+          )
+        ) <= $4
     `;
     
-    const params = [latitude, longitude, h3Cells];
-    let paramIndex = 4;
+    const params = [latitude, longitude, h3Cells, radiusKm];
+    let paramIndex = 5;
     
     // Add filters
     if (categoryId) {
-      queryText += ` AND sl.category_id = ${paramIndex}`;
+      queryText += ` AND sl.category_id = $${paramIndex}`;
       params.push(categoryId);
       paramIndex++;
     }
     
     if (minPrice !== undefined) {
-      queryText += ` AND sl.price_amount >= ${paramIndex}`;
+      queryText += ` AND sl.price_amount >= $${paramIndex}`;
       params.push(minPrice);
       paramIndex++;
     }
     
     if (maxPrice !== undefined) {
-      queryText += ` AND sl.price_amount <= ${paramIndex}`;
+      queryText += ` AND sl.price_amount <= $${paramIndex}`;
       params.push(maxPrice);
       paramIndex++;
     }
     
     if (minRating !== undefined) {
-      queryText += ` AND ur.average_rating >= ${paramIndex}`;
+      queryText += ` AND ur.average_rating >= $${paramIndex}`;
       params.push(minRating);
       paramIndex++;
     }
@@ -123,17 +130,6 @@ class Service {
     if (verified) {
       queryText += ` AND up.verification_status = 'verified'`;
     }
-    
-    // Distance filter
-    queryText += `
-      HAVING (
-        6371 * acos(
-          cos(radians($1)) * cos(radians(a.latitude)) *
-          cos(radians(a.longitude) - radians($2)) +
-          sin(radians($1)) * sin(radians(a.latitude))
-        )
-      ) <= ${radiusKm}
-    `;
     
     // Sorting
     const validSortFields = {
@@ -155,7 +151,7 @@ class Service {
     }
     queryText += `, ur.average_rating DESC NULLS LAST`;
     
-    queryText += ` LIMIT ${paramIndex} OFFSET ${paramIndex + 1}`;
+    queryText += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
     
     const result = await query(queryText, params);

@@ -5,7 +5,10 @@ class Booking {
   static async create({ serviceId, seekerId, providerId, scheduledStart, scheduledEnd, totalAmount, specialInstructions }) {
     return transaction(async (client) => {
       // Generate booking reference
-      const reference = 'BK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      // Generate a booking reference with max 20 chars: 'BK-' (3) + timestamp (10) + '-' (1) + random (6) = 20
+      const timestamp = Date.now().toString().slice(-10); // last 10 digits of timestamp
+      const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 chars
+      const reference = `BK-${timestamp}-${randomStr}`;
       
       // Check for conflicts
       const conflictCheck = await client.query(

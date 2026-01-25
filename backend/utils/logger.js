@@ -74,12 +74,18 @@ const transports = [
   new winston.transports.Console({
     format: process.env.NODE_ENV === 'development' ? consoleFormat : format,
   }),
+  // Always log to logs.txt in the project root
+  new winston.transports.File({
+    filename: path.join(__dirname, '../../logs.txt'),
+    maxsize: 10485760, // 10MB
+    maxFiles: 5,
+    format: format,
+  })
 ];
 
 // Add file transports in production
 if (process.env.NODE_ENV === 'production') {
   const logDir = process.env.LOG_FILE_PATH || './logs';
-  
   // Error log file
   transports.push(
     new winston.transports.File({
@@ -90,7 +96,6 @@ if (process.env.NODE_ENV === 'production') {
       format: format,
     })
   );
-  
   // Combined log file
   transports.push(
     new winston.transports.File({
