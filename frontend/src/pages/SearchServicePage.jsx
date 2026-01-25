@@ -1,9 +1,108 @@
 import React, { useEffect, useState } from "react";
 import { Search, MapPin, Navigation, RotateCcw, AlertCircle } from "lucide-react";
 import BookingModal from "../components/BookingModal";
-import api from "../utils/api"; // Using our interceptor
 import ServiceCard from "../components/ServiceCard";
 import useGeoLocation from "../hooks/useGeoLocation";
+
+// --- HARDCODED MOCK DATA ---
+// --- HARDCODED MOCK DATA (Keys matching ServiceCard expectations) ---
+const MOCK_SERVICES = [
+  {
+    ID: 1, // ServiceCard expects ID
+    TITLE: "Expert Pipe Fitting & Repair",
+    DESCRIPTION: "Licensed plumber with 10 years experience. I can fix leaks, install new fixtures, and handle emergency pipe bursts anytime.",
+    CATEGORY: "Plumbing", // ServiceCard expects a string or object.name
+    price_amount: 45.00,  // ServiceCard might check price_amount or priceAmount
+    priceAmount: 45.00,   // Keeping both for safety
+    serviceRadiusKm: 10,
+    neighborhood: "Downtown", // Shows in the #tag
+    provider: {
+      name: "Mario Rossi",
+      avatar: "https://i.pravatar.cc/150?u=mario",
+      rating: 4.9,
+      reviewCount: 124,
+      verified: true
+    },
+    location: { lat: 40.7128, lng: -74.0060 },
+    distance: 1.2
+  },
+  {
+    ID: 2,
+    TITLE: "Home Electrical Diagnostics",
+    DESCRIPTION: "Solving flickering lights, breaker trips, and outlet issues. Certified electrician available for weekend appointments.",
+    CATEGORY: "Electrical",
+    price_amount: 60.00,
+    priceAmount: 60.00,
+    serviceRadiusKm: 15,
+    neighborhood: "Westside",
+    provider: {
+      name: "Elena Sparks",
+      avatar: "https://i.pravatar.cc/150?u=elena",
+      rating: 4.8,
+      reviewCount: 89,
+      verified: true
+    },
+    location: { lat: 40.7138, lng: -74.0070 },
+    distance: 3.5
+  },
+  {
+    ID: 3,
+    TITLE: "Math & Physics Tutoring",
+    DESCRIPTION: "Patient tutor specializing in Calculus and Physics. I help students prepare for SATs and improve their grades.",
+    CATEGORY: "Education",
+    price_amount: 30.00,
+    priceAmount: 30.00,
+    serviceRadiusKm: 5,
+    neighborhood: "University District",
+    provider: {
+      name: "David Chen",
+      avatar: "https://i.pravatar.cc/150?u=david",
+      rating: 5.0,
+      reviewCount: 42,
+      verified: false
+    },
+    location: { lat: 40.7148, lng: -74.0050 },
+    distance: 0.8
+  },
+  {
+    ID: 4,
+    TITLE: "Deep House Cleaning Service",
+    DESCRIPTION: "Thorough cleaning for move-ins/move-outs or weekly maintenance. I bring my own eco-friendly supplies.",
+    CATEGORY: "Cleaning",
+    price_amount: 25.00,
+    priceAmount: 25.00,
+    serviceRadiusKm: 8,
+    neighborhood: "Suburbs",
+    provider: {
+      name: "Sarah Johnson",
+      avatar: "https://i.pravatar.cc/150?u=sarah",
+      rating: 4.7,
+      reviewCount: 215,
+      verified: true
+    },
+    location: { lat: 40.7118, lng: -74.0040 },
+    distance: 2.1
+  },
+  {
+    ID: 5,
+    TITLE: "Lawn Mowing & Garden Care",
+    DESCRIPTION: "Keep your yard looking great! I offer mowing, trimming, and seasonal cleanup services.",
+    CATEGORY: "Gardening",
+    price_amount: 40.00,
+    priceAmount: 40.00,
+    serviceRadiusKm: 3,
+    neighborhood: "Green Hills",
+    provider: {
+      name: "Mike Green",
+      avatar: "https://i.pravatar.cc/150?u=mike",
+      rating: 4.6,
+      reviewCount: 33,
+      verified: false
+    },
+    location: { lat: 40.7158, lng: -74.0080 },
+    distance: 4.5
+  }
+];
 
 const SearchServicePage = () => {
   const { location, getLocation, error: locationError } = useGeoLocation();
@@ -11,68 +110,63 @@ const SearchServicePage = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [radius, setRadius] = useState(null); // null = no location filter
-  const [searchMode, setSearchMode] = useState('recent'); // 'recent', 'text', 'nearby'
-
-  // Modal State
+  const [radius, setRadius] = useState(null); 
   const [selectedService, setSelectedService] = useState(null);
 
-  // 1. Unified Fetch Logic
+  // 1. Unified Fetch Logic (NOW MOCKED)
   const fetchServices = async (mode, params = {}) => {
     setLoading(true);
-    setSearchMode(mode);
     
-    try {
-      let endpoint = '/services/search?q=all'; // Default fallback
-      
-      // LOGIC: Choose endpoint based on backend requirements
-      if (mode === 'text') {
-        if (!params.q || params.q.length < 2) return; // Backend requires min 2 chars
-        endpoint = `/services/search?q=${encodeURIComponent(params.q)}`;
-      } 
-      else if (mode === 'nearby') {
-        if (!params.lat || !params.lng) return;
-        endpoint = `/services/nearby?lat=${params.lat}&lng=${params.lng}&radius=${params.radius || 5}`;
-      }
+    // Simulate Network Delay
+    setTimeout(() => {
+        let results = [...MOCK_SERVICES];
 
-      const { data } = await api.get(endpoint);
-      
-      // Backend returns: { success: true, data: { services: [], pagination: {} } }
-      setServices(data.data.services || []);
-      
-    } catch (err) {
-      console.error("Search failed:", err);
-      // Optional: setServices([]) if you want to clear results on error
-    } finally {
-      setLoading(false);
-    }
+        // Simulate Text Search Filtering
+        if (mode === 'text' && params.q && params.q !== 'all') {
+            const lowerQ = params.q.toLowerCase();
+            results = results.filter(s => 
+                s.TITLE.toLowerCase().includes(lowerQ) || 
+                s.DESCRIPTION.toLowerCase().includes(lowerQ) ||
+                s.CATEGORY.toLowerCase().includes(lowerQ)
+            );
+        }
+
+        // Simulate Radius Filtering (Simple Logic)
+        if (mode === 'nearby' && params.radius) {
+            // In a real app, we'd calc distance here. 
+            // For mock, we just filter services with distance < radius
+            results = results.filter(s => s.distance <= params.radius);
+        }
+
+        setServices(results);
+        setLoading(false);
+    }, 600); // 600ms fake delay
   };
 
   // 2. Initial Load
   useEffect(() => {
-    // Load generic results or recent services on mount
-    fetchServices('text', { q: 'repair' }); // Default landing content
+    fetchServices('text', { q: 'all' });
   }, []);
 
-  // 3. Handle Text Search (Debounced slightly in real app, but direct here)
+  // 3. Handle Text Search 
   const handleTextSearch = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-    
-    // Reset radius if typing
     if (radius) setRadius(null);
 
-    if (val.length >= 2) {
-      fetchServices('text', { q: val });
+    // Debounce simulation
+    if (val.length === 0) {
+        fetchServices('text', { q: 'all' });
+    } else {
+        fetchServices('text', { q: val });
     }
   };
 
   // 4. Handle Radius/Location Click
   const handleRadiusChange = (km) => {
     setRadius(km);
-    setSearchQuery(""); // Clear text search to focus on location
+    setSearchQuery(""); 
     
-    // If we have coords, fetch immediately. If not, getLocation() triggers the Effect below.
     if (location.loaded && location.coordinates.lat) {
         fetchServices('nearby', {
             lat: location.coordinates.lat,
@@ -81,6 +175,8 @@ const SearchServicePage = () => {
         });
     } else {
         getLocation();
+        // If getting location takes time, we just fetch anyway for demo
+        fetchServices('nearby', { radius: km });
     }
   };
 
@@ -163,9 +259,9 @@ const SearchServicePage = () => {
                     <AlertCircle size={12} /> Location denied. Using text search only.
                 </p>
             )}
-            {radius && location.loaded && (
+            {radius && (
                 <p className="text-teal-600 text-xs flex items-center gap-1 animate-in fade-in">
-                    <MapPin size={12} /> Showing providers within {radius}km of your location.
+                    <MapPin size={12} /> Showing providers within {radius}km.
                 </p>
             )}
           </div>
@@ -182,7 +278,7 @@ const SearchServicePage = () => {
             {services.length > 0 ? (
                 services.map((s) => (
                     <ServiceCard 
-                        key={s.id || s.ID} 
+                        key={s.ID } 
                         service={s} 
                         onBook={() => setSelectedService(s)} 
                     />
