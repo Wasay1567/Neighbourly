@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/features/userSlice";
-import { Home, Search, Calendar, LogOut,User, ChevronDown, Menu,X } from "lucide-react";
+import { Home, Search, Calendar, LogOut, User, ChevronDown, Menu, X, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 
 const Navbar = () => {
@@ -14,7 +14,10 @@ const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  //close dropdown when clicking outside
+  // Link to your external chat app
+  const CHAT_APP_URL = "http://localhost:5174/";
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -26,13 +29,13 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Clear persistence
+    localStorage.removeItem("token");
     dispatch(logout());
     navigate("/");
     toast.success("Logged out successfully");
   };
 
-  // Helper for Nav Links to keep code clean
+  // Helper for Internal Links (Router)
   const NavItem = ({ to, icon: Icon, label }) => (
     <NavLink
       to={to}
@@ -47,6 +50,19 @@ const Navbar = () => {
       <Icon size={18} />
       <span>{label}</span>
     </NavLink>
+  );
+
+  // Helper for External Links (New Tab)
+  const ExternalNavItem = ({ href, icon: Icon, label }) => (
+    <a
+      href={href}
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-teal-600 hover:bg-teal-50 transition-all duration-200"
+    >
+      <Icon size={18} />
+      <span>{label}</span>
+    </a>
   );
 
   return (
@@ -69,6 +85,8 @@ const Navbar = () => {
             <NavItem to="/dashboard" icon={Home} label="Home" />
             <NavItem to="/search-services" icon={Search} label="Explore" />
             <NavItem to="/my-bookings" icon={Calendar} label="Bookings" />
+        {/* chat button             */}
+            <ExternalNavItem href={CHAT_APP_URL} icon={MessageSquare} label="Messages" />
           </div>
 
           {/* 3. User Profile Dropdown */}
@@ -129,6 +147,9 @@ const Navbar = () => {
             <NavItem to="/dashboard" icon={Home} label="Home" />
             <NavItem to="/search-services" icon={Search} label="Explore Services" />
             <NavItem to="/my-bookings" icon={Calendar} label="My Bookings" />
+            
+            <ExternalNavItem href={CHAT_APP_URL} icon={MessageSquare} label="Messages" />
+
             <div className="h-px bg-gray-100 my-2" />
             <NavItem to="/profile" icon={User} label="My Profile" />
             <button 
