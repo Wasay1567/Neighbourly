@@ -86,7 +86,7 @@ const Navbar = () => {
             <NavItem to="/search-services" icon={Search} label="Explore" />
             <NavItem to="/my-bookings" icon={Calendar} label="Bookings" />
         {/* chat button             */}
-            <ExternalNavItem href={CHAT_APP_URL} icon={MessageSquare} label="Messages" />
+            <ExternalNavItem href={"https://talk-a-tive-7fgq.onrender.com/"} icon={MessageSquare} label="Messages" />
           </div>
 
           {/* 3. User Profile Dropdown */}
