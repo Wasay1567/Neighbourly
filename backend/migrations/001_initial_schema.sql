@@ -1,19 +1,7 @@
--- Migration 001: Initial Schema Setup for Neighbourly Stage 2
--- Author: System Architect
--- Date: 2026-01-24
--- Description: Complete normalized schema with H3 support, RBAC, and audit trails
-
 BEGIN;
-
--- ============================================================================
--- EXTENSIONS
--- ============================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ============================================================================
--- CUSTOM TYPES
--- ============================================================================
 CREATE TYPE user_role AS ENUM ('seeker', 'provider', 'moderator', 'admin');
 CREATE TYPE user_status AS ENUM ('active', 'suspended', 'deactivated', 'pending_verification');
 CREATE TYPE verification_status AS ENUM ('unverified', 'pending', 'verified', 'rejected');
@@ -23,10 +11,6 @@ CREATE TYPE transaction_status AS ENUM ('pending', 'completed', 'failed', 'refun
 CREATE TYPE dispute_status AS ENUM ('open', 'under_review', 'resolved', 'closed');
 CREATE TYPE notification_type AS ENUM ('booking', 'message', 'review', 'system', 'payment');
 CREATE TYPE audit_action AS ENUM ('create', 'update', 'delete', 'status_change', 'permission_override');
-
--- ============================================================================
--- CORE TABLES
--- ============================================================================
 
 -- Users Table (Normalized with separate profile)
 CREATE TABLE users (
@@ -254,9 +238,6 @@ CREATE TABLE user_reputation (
     CONSTRAINT valid_cancellation_rate CHECK (cancellation_rate BETWEEN 0 AND 100)
 );
 
--- ============================================================================
--- RBAC & PERMISSIONS
--- ============================================================================
 
 -- Permissions Table
 CREATE TABLE permissions (
@@ -293,10 +274,6 @@ CREATE TABLE user_permission_overrides (
     CONSTRAINT unique_user_permission UNIQUE (user_id, permission_id)
 );
 
--- ============================================================================
--- TRANSACTIONS & PAYMENTS
--- ============================================================================
-
 -- Transactions Table
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -320,10 +297,6 @@ CREATE TABLE transactions (
     CONSTRAINT valid_net_amount CHECK (net_amount = amount - platform_fee)
 );
 
--- ============================================================================
--- DISPUTES & MODERATION
--- ============================================================================
-
 -- Disputes Table
 CREATE TABLE disputes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -341,54 +314,6 @@ CREATE TABLE disputes (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================================
--- AUDIT & LOGGING
--- ============================================================================
-
--- Comprehensive Audit Log (Immutable)
-CREATE TABLE audit_logs (
-    id BIGSERIAL PRIMARY KEY,
-    table_name VARCHAR(100) NOT NULL,
-    record_id UUID NOT NULL,
-    action audit_action NOT NULL,
-    old_data JSONB,
-    new_data JSONB,
-    changed_fields TEXT[],
-    performed_by UUID REFERENCES users(id),
-    ip_address INET,
-    user_agent TEXT,
-    reason TEXT,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
--- Make audit_logs immutable
-CREATE RULE audit_logs_immutable AS ON UPDATE TO audit_logs DO INSTEAD NOTHING;
-CREATE RULE audit_logs_no_delete AS ON DELETE TO audit_logs DO INSTEAD NOTHING;
-
--- ============================================================================
--- NOTIFICATIONS & MESSAGING
--- ============================================================================
-
--- Notifications Table
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type notification_type NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    message TEXT NOT NULL,
-    data JSONB,
-    is_read BOOLEAN DEFAULT FALSE,
-    read_at TIMESTAMP WITH TIME ZONE,
-    action_url VARCHAR(500),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP WITH TIME ZONE
-);
-
--- ============================================================================
--- CACHING & SEARCH OPTIMIZATION
--- ============================================================================
-
 -- Trending Services Cache (Materialized for performance)
 CREATE TABLE trending_services_cache (
     neighborhood_id INTEGER NOT NULL REFERENCES neighborhoods(id),
@@ -399,10 +324,6 @@ CREATE TABLE trending_services_cache (
     
     PRIMARY KEY (neighborhood_id, service_id, period)
 );
-
--- ============================================================================
--- INDEXES FOR PERFORMANCE
--- ============================================================================
 
 -- User Indexes
 CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
@@ -445,23 +366,12 @@ CREATE INDEX idx_reputation_score ON user_reputation(reliability_score DESC, ave
 -- Neighborhood H3 Index (Array search)
 CREATE INDEX idx_neighborhoods_h3_cells ON neighborhoods USING GIN(h3_cells);
 
--- Audit Log Indexes
-CREATE INDEX idx_audit_table_record ON audit_logs(table_name, record_id, created_at DESC);
-CREATE INDEX idx_audit_performer ON audit_logs(performed_by, created_at DESC);
-CREATE INDEX idx_audit_action ON audit_logs(action, created_at DESC);
-
--- Notification Indexes
-CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read, created_at DESC);
-
 -- Transaction Indexes
 CREATE INDEX idx_transactions_booking ON transactions(booking_id);
 CREATE INDEX idx_transactions_payer ON transactions(payer_id, created_at DESC);
 CREATE INDEX idx_transactions_payee ON transactions(payee_id, created_at DESC);
 CREATE INDEX idx_transactions_status ON transactions(status, created_at DESC);
 
--- ============================================================================
--- TRIGGERS FOR AUTOMATION
--- ============================================================================
 
 -- Updated At Trigger Function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -496,36 +406,6 @@ CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews
 
 CREATE TRIGGER update_disputes_updated_at BEFORE UPDATE ON disputes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Audit Trigger Function
-CREATE OR REPLACE FUNCTION audit_trigger_function()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO audit_logs (table_name, record_id, action, new_data, performed_by)
-        VALUES (TG_TABLE_NAME, NEW.id, 'create', row_to_json(NEW), NEW.id);
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO audit_logs (table_name, record_id, action, old_data, new_data, performed_by)
-        VALUES (TG_TABLE_NAME, NEW.id, 'update', row_to_json(OLD), row_to_json(NEW), NEW.id);
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO audit_logs (table_name, record_id, action, old_data, performed_by)
-        VALUES (TG_TABLE_NAME, OLD.id, 'delete', row_to_json(OLD), OLD.id);
-        RETURN OLD;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply audit triggers to critical tables
-CREATE TRIGGER audit_bookings AFTER INSERT OR UPDATE OR DELETE ON bookings
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-
-CREATE TRIGGER audit_transactions AFTER INSERT OR UPDATE OR DELETE ON transactions
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-
-CREATE TRIGGER audit_user_permission_overrides AFTER INSERT OR UPDATE OR DELETE ON user_permission_overrides
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
 
 -- ============================================================================
 -- INITIAL DATA SEEDS
@@ -604,15 +484,3 @@ INSERT INTO service_categories (parent_id, name, slug, description) VALUES
 (5, 'Massage Therapy', 'massage-therapy', 'Therapeutic massage services');
 
 COMMIT;
-
--- ============================================================================
--- POST-MIGRATION NOTES
--- ============================================================================
--- 1. Remember to set up connection pooling (pg_bouncer recommended)
--- 2. Configure WAL archiving for point-in-time recovery
--- 3. Set up regular VACUUM and ANALYZE schedules
--- 4. Monitor index usage and table bloat
--- 5. Implement row-level security (RLS) policies for multi-tenancy if needed
--- 6. Set up read replicas for read-heavy workloads
--- 7. Configure appropriate statement_timeout and lock_timeout values
--- 8. Enable pg_stat_statements for query performance monitoring
