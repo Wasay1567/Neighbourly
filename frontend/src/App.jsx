@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-import Layout from "./layout/Layout";
+import ProtectedLayout from "./layout/ProtectedLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardWrapper from "./pages/DashboardWrapper";
@@ -9,6 +9,7 @@ import SearchServicePage from "./pages/SearchServicePage";
 import ServiceDetails from "./pages/ServiceDetails";
 import MyBookings from "./pages/MyBookings";
 import PaymentPage from "./pages/PaymentPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const App = () => {
   return (
@@ -16,8 +17,9 @@ const App = () => {
       <Route path="/" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route element={<Layout />} >
+      <Route element={<ProtectedLayout />} >
         <Route path="/dashboard" element={<DashboardWrapper />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search-services" element={<SearchServicePage />} />
         <Route path="/services/:id" element={<ServiceDetails />} />
         <Route path="/my-bookings" element={<MyBookings />} />

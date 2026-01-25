@@ -1,104 +1,159 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
+import { X, Calendar, Clock, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { X } from "lucide-react";
-import { API_URL } from "../conf/conf.js";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api"; 
+import { useSelector } from "react-redux";
 
 const BookingModal = ({ service, onClose }) => {
-  const user = useSelector((state) => state.user.userData);
-    const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+  const navigate = useNavigate();
+  const { userData } = useSelector((state) => state.user);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
+  // Helper to calculate total price dynamically based on duration
+  const [duration, setDuration] = useState(1); // Default 1 hour
+  const pricePerHour = parseFloat(service.priceAmount || service.price_amount || 0);
+  const estimatedTotal = (pricePerHour * duration).toFixed(2);
 
   const onSubmit = async (data) => {
-    if (!user) {
-      toast.error("You must be logged in to book a service!");
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_URL}/bookings/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userID: user.ID,
-          serviceID: service.ID,
-          coverletter: data.coverLetter,
-        }),
+      // 1. Construct ISO Timestamps for Backend
+      // Combine Date (YYYY-MM-DD) and Time (HH:MM)
+      const startDateTime = new Date(`${data.date}T${data.time}`);
+      
+      // Calculate End Time based on duration
+      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+      // Backend Payload
+      const payload = {
+        serviceId: service.id || service.ID, // Handle case sensitivity
+        scheduledStart: startDateTime.toISOString(),
+        scheduledEnd: endDateTime.toISOString(),
+        specialInstructions: data.notes || ""
+      };
+
+      // 2. Call API (Stage 2 Endpoint)
+      const response = await api.post('/bookings', payload);
+      
+      // 3. Handle Success
+      const booking = response.data.data.booking;
+      toast.success("Booking request sent!");
+      
+      // 4. Redirect to Payment Simulation
+      // We pass the new booking ID and calculated amount
+      navigate('/payment', { 
+        state: { 
+            bookingId: booking.id, 
+            serviceTitle: service.TITLE || service.title,
+            amount: booking.totalAmount || estimatedTotal, 
+            providerName: "Service Provider" // You might want to pass provider name from service prop
+        } 
       });
 
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        // Handle specific "Already Booked" error from your API
-        if (res.status === 400) {
-          throw new Error("You have already requested this service.");
-        }
-        throw new Error(responseData.error || "Booking failed");
-      }
-
-      toast.success("Request sent successfully!");
-      onClose(); // Close the modal
-      navigate("/payment", {
-         state: {
-             bookingId: responseData.data.bookingId,
-             serviceTitle: service.TITLE,
-             amount: service.priceAmount || 500,
-             providerName: "Service Provider Inc."
-         } });
     } catch (err) {
-      toast.error(err.message);
+      console.error(err);
+      const msg = err.response?.data?.message || "Booking failed. Please try again.";
+      toast.error(msg);
     }
   };
 
+  if (!userData) {
+      return null; //safety check
+  }
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative">
         
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition"
+        >
+          <X size={20} className="text-gray-500" />
+        </button>
+
         {/* Header */}
-        <div className="bg-blue-600 p-4 flex justify-between items-center text-white">
-          <h3 className="font-bold text-lg">Request Service</h3>
-          <button onClick={onClose} className="hover:bg-blue-700 p-1 rounded transition">
-            <X size={20} />
-          </button>
+        <div className="bg-teal-600 p-6 text-white">
+          <h2 className="text-xl font-bold">Request Service</h2>
+          <p className="text-teal-100 text-sm mt-1">{service.TITLE || service.title}</p>
         </div>
 
         {/* Form */}
         <div className="p-6">
-          <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <p className="text-xs text-blue-600 font-bold uppercase mb-1">Booking</p>
-            <p className="font-semibold text-gray-800">{service.TITLE}</p>
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Message to Provider
-              </label>
-              <textarea
-                rows="4"
-                placeholder="Hi! I'm interested in this service. Are you available on..."
-                {...register("coverLetter", { required: true })}
-                className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Introduce yourself and suggest a time.
-              </p>
+            
+            {/* Date & Time Row */}
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Date</label>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            {...register("date", { required: "Date is required" })}
+                            className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                            min={new Date().toISOString().split('T')[0]} // Disable past dates
+                        />
+                        <Calendar className="absolute left-3 top-2.5 text-gray-400" size={16}/>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Start Time</label>
+                    <div className="relative">
+                        <input
+                            type="time"
+                            {...register("time", { required: "Time is required" })}
+                            className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                        />
+                        <Clock className="absolute left-3 top-2.5 text-gray-400" size={16}/>
+                    </div>
+                </div>
             </div>
 
+            {/* Duration Selector */}
+            <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Duration (Hours)</label>
+                <select 
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
+                >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(h => (
+                        <option key={h} value={h}>{h} Hour{h > 1 ? 's' : ''}</option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Notes */}
+            <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Special Instructions</label>
+                <textarea
+                    rows="3"
+                    {...register("notes")}
+                    placeholder="Gate code, specific focus areas, etc..."
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                />
+            </div>
+
+            {/* Price Estimate */}
+            <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center border border-gray-100">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <AlertCircle size={16} />
+                    <span>Estimated Total</span>
+                </div>
+                <span className="text-xl font-bold text-teal-700">${estimatedTotal}</span>
+            </div>
+
+            {/* Submit */}
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-teal-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-teal-700 transition transform active:scale-[0.98] disabled:opacity-70"
             >
-              {isSubmitting ? "Sending Request..." : "Confirm Booking"}
+                {isSubmitting ? "Sending Request..." : "Proceed to Payment"}
             </button>
+
           </form>
         </div>
       </div>

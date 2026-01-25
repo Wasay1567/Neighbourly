@@ -18,32 +18,40 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // 1. Construct the payload according to API docs
-      // Note: API expects flat structure, not nested 'profile' object
+      // 1. Construct Payload (Matches your backend authController.register)
       const payload = {
         email: data.email,
         password: data.password,
-        role: data.role, // 'seeker' or 'provider'
-        firstName: data.firstName,
+        role: data.role, 
+        firstName: data.firstName, 
         lastName: data.lastName,
-        phone: data.phone || "", // Optional based on your form, but good to send
-        bio: "" // Optional initial bio
+        phone: data.phone || "", 
+        bio: "" 
       };
 
+      // 2. API Call
       const response = await api.post('/auth/register', payload);
       
-      // 2. Extract Data (API returns token on register!)
-      // Response structure: { success: true, data: { user: {...}, token: "..." } }
-      const { user, token } = response.data.data;
+      // 3. Extract Data
+      // Backend returns: data: { user: { id, email, role }, token }
+      const { user: apiUser, token } = response.data.data;
 
-      // 3. Auto-Login Logic
+      // 4. Auto-Login Logic
       if (token) {
         localStorage.setItem("token", token);
-        dispatch(login({ userData: user }));
-        toast.success(`Welcome to Neighbourly, ${user.firstName || 'Neighbor'}!`);
-        navigate('/dashboard'); // Go straight to dashboard
+        
+        // MERGE: Backend response lacks names, so we add form data for Redux state
+        const completeUser = { 
+            ...apiUser, 
+            NAME: `${data.firstName} ${data.lastName}`,
+            firstName: data.firstName,
+            lastName: data.lastName 
+        };
+
+        dispatch(login({ userData: completeUser }));
+        toast.success(`Welcome to Neighbourly, ${data.firstName}!`);
+        navigate('/dashboard'); 
       } else {
-        // Fallback if no token returned
         toast.success("Account created! Please login.");
         navigate('/');
       }
@@ -72,7 +80,7 @@ const RegisterPage = () => {
                 <input 
                   {...register("firstName", { required: "Required" })} 
                   className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all" 
-                  placeholder="Ali"
+                  placeholder="John"
                 />
                 {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
             </div>
@@ -81,7 +89,7 @@ const RegisterPage = () => {
                 <input 
                   {...register("lastName", { required: "Required" })} 
                   className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all" 
-                  placeholder="Ahmed"
+                  placeholder="Doe"
                 />
             </div>
           </div>
@@ -96,7 +104,7 @@ const RegisterPage = () => {
                 pattern: { value: /\S+@\S+\.\S+/, message: "Invalid email" }
               })} 
               className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all" 
-              placeholder="Ali@example.com"
+              placeholder="john@example.com"
             />
             {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
           </div>
@@ -113,17 +121,6 @@ const RegisterPage = () => {
             {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
           </div>
 
-          {/* Phone (Added as optional since API supports it) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
-            <input 
-              type="tel" 
-              {...register("phone")} 
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all" 
-              placeholder="+923345678901"
-            />
-          </div>
-
           {/* Role Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">I want to...</label>
@@ -135,9 +132,6 @@ const RegisterPage = () => {
                 <option value="seeker">Find Services (Seeker)</option>
                 <option value="provider">Offer Services (Provider)</option>
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-              </div>
             </div>
           </div>
 
