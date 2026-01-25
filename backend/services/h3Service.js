@@ -12,7 +12,7 @@ class H3Service {
     // Resolution 8: ~0.74 km² (~0.9 km edge) - Neighborhood-level
     // Resolution 9: ~0.10 km² (~350 m edge) - Block-level (DEFAULT)
     // Resolution 10: ~0.015 km² (~120 m edge) - Precise location
-    this.defaultResolution = parseInt(process.env.H3_DEFAULT_RESOLUTION || '9', 10);
+    this.defaultResolution = parseInt(process.env.H3_DEFAULT_RESOLUTION || '8', 10);
     this.searchResolutions = process.env.H3_SEARCH_RESOLUTIONS?.split(',').map(Number) || [7, 8, 9];
   }
 
@@ -246,6 +246,12 @@ class H3Service {
     try {
       // Convert [[lat, lng], ...] to GeoJSON format
       const geoJsonPolygon = polygon.map(([lat, lng]) => [lng, lat]);
+      const first = geoJsonPolygon[0];
+      const last = geoJsonPolygon[geoJsonPolygon.length - 1];
+      
+      if (first[0] !== last[0] || first[1] !== last[1]) {
+        geoJsonPolygon.push(first);
+      }
       return h3.polygonToCells([geoJsonPolygon], resolution);
     } catch (error) {
       logger.error('Error converting polygon to H3 cells', { 

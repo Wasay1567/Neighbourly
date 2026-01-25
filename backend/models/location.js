@@ -108,7 +108,7 @@ class Location {
          SELECT 
            id, parent_id, name, slug, description, 
            icon_url, sort_order, 0 as level,
-           ARRAY[name] as path
+           ARRAY[name]::character varying(100)[] as path
          FROM service_categories
          WHERE parent_id IS NULL AND is_active = true
          
@@ -118,7 +118,7 @@ class Location {
          SELECT 
            c.id, c.parent_id, c.name, c.slug, c.description,
            c.icon_url, c.sort_order, ct.level + 1,
-           ct.path || c.name
+           (ct.path || c.name::character varying(100))::character varying(100)[]
          FROM service_categories c
          INNER JOIN category_tree ct ON c.parent_id = ct.id
          WHERE c.is_active = true

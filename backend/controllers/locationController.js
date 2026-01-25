@@ -172,7 +172,7 @@ exports.createNeighborhood = async (req, res, next) => {
     let h3Cells = [];
     if (coordinates && coordinates.length > 0) {
       // Use polygon to generate H3 coverage
-      h3Cells = h3Service.polygonToCells(coordinates, 9);
+      h3Cells = h3Service.polygonToCells(coordinates, 10);
     }
     
     const neighborhood = await Location.createNeighborhood({

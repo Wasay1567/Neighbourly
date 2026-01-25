@@ -259,19 +259,19 @@ describe('🚀 Neighbourly Stage 2 - Complete Integration Tests', () => {
 
     test('Admin should create neighborhood', async () => {
       const res = await request(app)
-        .post('/api/v1/locations/neighborhoods')
-        .set('Authorization', `Bearer ${testData.admin.token}`)
-        .send({
-          cityId: testData.city.id,
-          name: 'Manhattan',
-          description: 'Heart of New York City',
-          coordinates: [
-            [40.7831, -73.9712],
-            [40.7489, -73.9680],
-            [40.7489, -74.0060],
-            [40.7831, -74.0060]
-          ]
-        });
+      .post('/api/v1/locations/neighborhoods')
+      .set('Authorization', `Bearer ${testData.admin.token}`)
+      .send({
+        cityId: testData.city.id,
+        name: 'Empress Market Saddar',
+        description: 'Historic market area in Saddar, Karachi',
+        coordinates: [
+        [24.8615, 67.0304], // NW corner
+        [24.8606, 67.0320], // NE corner
+        [24.8597, 67.0312], // SE corner
+        [24.8606, 67.0296]  // SW corner
+        ]
+      });
       
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
