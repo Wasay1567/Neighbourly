@@ -34,7 +34,6 @@ const CreateForm = ({ setServices, closeForm }) => {
                 const { data } = await api.get(`/neighborhoods/find?lat=${location.coordinates.lat}&lng=${location.coordinates.lng}`);
                 setNeighborhoodName(data.data.neighborhood.name);
             } catch (err) {
-                console.log("Could not identify specific neighborhood");
                 setNeighborhoodName(null);
             }
         }
@@ -42,7 +41,7 @@ const CreateForm = ({ setServices, closeForm }) => {
     identifyNeighborhood();
   }, [location.loaded, location.coordinates.lat]);
 
-  // 3. The Submit Handler (FIXED)
+  // 3. The Submit Handler
   const onSubmit = async (data) => {
     if (!location.loaded || !location.coordinates.lat) {
       toast.error("Location is required. Please allow GPS access.");
@@ -65,37 +64,43 @@ const CreateForm = ({ setServices, closeForm }) => {
 
       const payload = {
         title: data.title,
-        
         description: data.description,
         shortDescription: data.description.substring(0, 150), 
-        
-        categoryId: catId,
-        
+        categoryId: 17, // Use the selected subcategory ID
         priceAmount: parseFloat(data.price),
-        priceUnit: 'hour', // Default required by bacend
+        priceUnit: 'hour', 
         latitude: lat,
         longitude: lng,
         streetAddress: autoAddress,
-        postalCode: "00000",       //Required by DB schema
+        postalCode: "00000",
         cityId: 1,    
-        neighborhoodId: 1,
-        
+        neighborhoodId: 5,
         serviceRadiusKm: 5,
         durationMinutes: 60
       };
-
-      console.log("Sending Service Payload:", payload); // Debugging
 
       const res = await api.post('/services', payload); 
       toast.success(`Service listed successfully!`);
 
       // Optimistic Update
       if (setServices) {
+          // Helper to find category name even inside nested structure
+          const findCatName = (id) => {
+             for (let parent of categories) {
+                 if (parent.id === id) return parent.name;
+                 if (parent.subcategories) {
+                     const sub = parent.subcategories.find(s => s.id === id);
+                     if (sub) return sub.name;
+                 }
+             }
+             return "Service";
+          };
+
           const newServiceOptimistic = {
             id: res.data.data?.service?.id || Date.now(),
             title: data.title,
             description: data.description,
-            category: categories.find(c => c.id === catId)?.name || "Service",
+            category: findCatName(catId),
             priceAmount: payload.priceAmount,
             serviceRadiusKm: payload.serviceRadiusKm
           };
@@ -163,7 +168,7 @@ const CreateForm = ({ setServices, closeForm }) => {
           />
         </div>
 
-        {/* Category */}
+        {/* --- FIXED CATEGORY DROPDOWN --- */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
           <div className="relative">
@@ -173,11 +178,26 @@ const CreateForm = ({ setServices, closeForm }) => {
                 disabled={catsLoading}
             >
                 <option value="">Select Category...</option>
-                {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                    </option>
-                ))}
+                {categories.map((cat) => {
+                    // Logic: If category has children, create a Group. If not, create an Option.
+                    if (cat.subcategories && cat.subcategories.length > 0) {
+                        return (
+                            <optgroup key={cat.id} label={cat.name}>
+                                {cat.subcategories.map((sub) => (
+                                    <option key={sub.id} value={sub.id}>
+                                        {sub.name}
+                                    </option>
+                                ))}
+                            </optgroup>
+                        );
+                    } else {
+                        return (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
+                        );
+                    }
+                })}
             </select>
             <Tag className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16} />
           </div>
