@@ -14,7 +14,7 @@ const useMetaData = () => {
         setCategories(data.data.all || []);
       } catch (err) {
         console.error("Failed to load categories", err);
-        // Fallback for demo
+        // fallback for demo
         setCategories([
             { id: 1, name: 'Gardening' },
             { id: 2, name: 'Plumbing' },
