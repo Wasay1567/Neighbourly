@@ -2,6 +2,12 @@
 
 A hyper-local marketplace backend with **40+ APIs**, H3 geospatial search, RBAC, custom reputation algorithm, and complete transaction system.
 
+https://github.com/Wasay1567/neighbourly.git
+branches:
+stage-2
+stage-2-frontend
+stage-1
+
 ## 🎯 What's Included
 
 ### ✅ Complete Feature Set

@@ -29,35 +29,35 @@ services:
       - "-c"
       - "shared_buffers=256MB"
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: neighbourly_backend
-  #   restart: unless-stopped
-  #   environment:
-  #     NODE_ENV: production
-  #     PORT: 3000
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: neighbourly_db
-  #     DB_USER: neighbourly_user
-  #     DB_PASSWORD: neighbourly_pass_2024
-  #     JWT_SECRET: SafeAndSecure
-  #     JWT_EXPIRES_IN: 7d
-  #     BCRYPT_ROUNDS: 12
-  #     RATE_LIMIT_WINDOW_MS: 900000
-  #     RATE_LIMIT_MAX_REQUESTS: 100
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/node_modules
-  #   networks:
-  #     - neighbourly_network
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: neighbourly_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: neighbourly_db
+      DB_USER: neighbourly_user
+      DB_PASSWORD: neighbourly_pass_2024
+      JWT_SECRET: SafeAndSecure
+      JWT_EXPIRES_IN: 7d
+      BCRYPT_ROUNDS: 12
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - neighbourly_network
 
 
 volumes:
