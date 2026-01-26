@@ -1,16 +1,9 @@
-# React + Vite
+User profile and verification system
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+local tutoring, equipment rental, or specialized repair work)
 
-Currently, two official plugins are available:
+Maintaining accurate, immutable logs for service history, transactions, and user ratings. Use persistent storage where we will use pub sub architecrture kafka to ensure all the services sends logs to single service which stores data in s3 bucket
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Synchronizing service availability and bookings to prevent double-booking or scheduling conflicts; Uses mutex locks while inserting in database which is already availabble in postgress
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Stage 1: The Neighborhood Pilot - Single Community MVP Initially, the focus is on a single neighborhood to test the core logic of listing and booking services. ● Core Entities: User (Provider or Seeker), Service Listing, and Booking Request. ● Functionality: A provider can post a service; a seeker can search and book a slot. ● Tech Constraints: * Data can be stored locally (JSON files or SQLite). ○ A simple REST API or CLI to perform CRUD operations. ○ Focus on basic validation (e.g., a user cannot book their own service).
