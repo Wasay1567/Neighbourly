@@ -5,16 +5,18 @@ import { useDispatch } from "react-redux";
 import { login } from "@/features/userSlice.js";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
-import { Home, ShieldAlert, Settings } from "lucide-react"; 
-
-//backend is ready
-const DEMO_MODE = false; 
+import { 
+  Search,       // for Seeker
+  Briefcase,    // for Provider
+  ShieldAlert,  // for Moderator
+  Settings      // for Admin
+} from "lucide-react"; 
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeRole, setActiveRole] = useState("neighbor");
+  const [activeRole, setActiveRole] = useState("seeker"); // Default to Seeker
   
   const { register, handleSubmit, formState: { errors } } = useForm();
 
@@ -25,9 +27,7 @@ const Login = () => {
   const onSubmit = async ({ email, password }) => {
     setIsLoading(true);
     try {
-      // 1. API Call (Stage 2 Integration)
-      // Note: Backend 'login' uses email/pass. It ignores 'role' in body, 
-      // but we send it if we want to add frontend validation later.
+      // 1. API Call
       const response = await api.post('/auth/login', { 
         email, 
         password
@@ -41,74 +41,80 @@ const Login = () => {
       // 3. Store & State
       localStorage.setItem("token", token);
       
-      // Normalize User Data for Redux
       const normalizedUser = {
         ...user,
         NAME: user.firstName ? `${user.firstName} ${user.lastName}` : user.email,
-        ROLE: user.role ? user.role.toUpperCase() : 'USER'
+        ROLE: user.role ? user.role.toUpperCase() : 'SEEKER'
       };
 
       dispatch(login(normalizedUser));
 
-      toast.success(`Welcome back!`);
+      toast.success(`Welcome back, ${normalizedUser.NAME}!`);
       
-      // 4. Redirect based on Role (Using the ACTUAL role from DB, not just the tab)
+      // 4. Redirect Logic
+      // We check the ACTUAL role from the database, not just the tab they clicked
       const userRole = user.role?.toLowerCase();
       
-      if (userRole === 'admin') {
-          navigate("/dashboard");
-      } else if (userRole === 'moderator') {
-          navigate("/dashboard"); // DashboardWrapper handles the UI
-      } else {
-          navigate("/dashboard");
-      }
+      // if (userRole === 'admin') {
+      //     navigate("/dashboard");
+      // } else if (userRole === 'moderator') {
+      //     navigate("/dashboard");
+      // } else {
+      //     // Standard users (Seekers & Providers) go to same dashboard
+      //     // The dashboard handles what they see internally
+      //     navigate("/dashboard");
+      // }
+
+      navigate("/dashboard");
 
     } catch (err) {
       console.error("Login Error:", err);
       const errorMessage = err.response?.data?.message || err.message || "Login failed.";
-      
-      if(err.response?.status === 403) {
-          toast.error("Account pending verification.");
-      } else {
-          toast.error(errorMessage);
-      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Theme Colors
-  const getThemeColor = () => {
+  // --- Dynamic Styling Based on Role ---
+  const getTheme = () => {
     switch (activeRole) {
-      case 'admin': return 'bg-gray-800';      
-      case 'moderator': return 'bg-purple-700'; 
-      case 'neighbor': default: return 'bg-emerald-600'; 
+      case 'admin':    return { bg: 'bg-gray-800',    text: 'text-gray-800',    border: 'border-gray-800',    hover: 'hover:bg-gray-900',    icon: Settings };
+      case 'moderator':return { bg: 'bg-purple-700',  text: 'text-purple-700',  border: 'border-purple-700',  hover: 'hover:bg-purple-800',  icon: ShieldAlert };
+      case 'provider': return { bg: 'bg-blue-600',    text: 'text-blue-600',    border: 'border-blue-600',    hover: 'hover:bg-blue-700',    icon: Briefcase };
+      case 'seeker':   
+      default:         return { bg: 'bg-emerald-600', text: 'text-emerald-600', border: 'border-emerald-600', hover: 'hover:bg-emerald-700', icon: Search };
     }
   };
 
+  const theme = getTheme();
+  const Icon = theme.icon;
+
   return (
-    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-300">
+    <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-300">
       
       {/* Header */}
-      <div className={`${getThemeColor()} p-6 text-center transition-colors duration-300`}>
+      <div className={`${theme.bg} p-6 text-center transition-colors duration-300`}>
         <h2 className="text-2xl font-bold text-white tracking-wide drop-shadow-md">
           Neighbourly Portal
         </h2>
+        <p className="text-white/80 text-sm mt-1 capitalize">{activeRole} Access</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-gray-50">
-        {['neighbor', 'moderator', 'admin'].map((role) => (
+      <div className="flex border-b border-gray-200 bg-gray-50 overflow-x-auto">
+        {['seeker', 'provider', 'moderator', 'admin'].map((role) => (
             <button
                 key={role}
                 type="button"
                 onClick={() => handleTabChange(role)}
-                className={`flex-1 py-4 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all 
+                className={`flex-1 py-4 px-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap
                 ${activeRole === role 
                     ? `bg-white border-t-4 shadow-sm ${
                         role === 'admin' ? 'text-gray-800 border-gray-800' :
                         role === 'moderator' ? 'text-purple-700 border-purple-700' :
-                        'text-emerald-700 border-emerald-600'
+                        role === 'provider' ? 'text-blue-600 border-blue-600' :
+                        'text-emerald-600 border-emerald-600'
                     }` 
                     : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}
             >
@@ -120,24 +126,19 @@ const Login = () => {
       {/* Form Area */}
       <div className="p-8">
         <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-100">
-          {activeRole === 'neighbor' && <Home className="text-emerald-600" size={28} />}
-          {activeRole === 'moderator' && <ShieldAlert className="text-purple-600" size={28} />}
-          {activeRole === 'admin' && <Settings className="text-gray-700" size={28} />}
+          <Icon className={theme.text} size={28} />
           
-          <h3 className={`text-2xl font-bold capitalize ${
-            activeRole === 'admin' ? 'text-gray-800' : 
-            activeRole === 'moderator' ? 'text-purple-700' : 'text-emerald-700'
-          }`}>
+          <h3 className={`text-2xl font-bold capitalize ${theme.text}`}>
             {activeRole} Login
           </h3>
         </div>
 
         <div className="flex justify-end gap-1 text-sm mb-6">
             <a href="#" className="text-gray-500 hover:text-gray-800">Recover Password</a>
-            {activeRole === 'neighbor' && (
+            {(activeRole === 'seeker' || activeRole === 'provider') && (
                 <>
                     <span className="text-gray-300">|</span>
-                    <Link to="/register" className="text-emerald-600 font-bold hover:underline">Sign Up</Link>
+                    <Link to="/register" className={`${theme.text} font-bold hover:underline`}>Sign Up</Link>
                 </>
             )}
         </div>
@@ -172,13 +173,9 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full text-white font-bold py-3 rounded shadow-md transition-transform transform active:scale-[0.98] ${
-                activeRole === 'admin' ? 'bg-gray-800 hover:bg-gray-900' :
-                activeRole === 'moderator' ? 'bg-purple-600 hover:bg-purple-700' :
-                'bg-emerald-600 hover:bg-emerald-700'
-            }`}
+            className={`w-full text-white font-bold py-3 rounded shadow-md transition-transform transform active:scale-[0.98] ${theme.bg} ${theme.hover}`}
           >
-            {isLoading ? "Authenticating..." : "Login"}
+            {isLoading ? "Authenticating..." : `Login as ${activeRole.charAt(0).toUpperCase() + activeRole.slice(1)}`}
           </button>
         </form>
       </div>

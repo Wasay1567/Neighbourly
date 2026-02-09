@@ -3,54 +3,57 @@ import { useForm } from "react-hook-form";
 import { X, Calendar, Clock, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/api"; 
+import api from "../utils/api";
 import { useSelector } from "react-redux";
+
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === "TRUE";
 
 const BookingModal = ({ service, onClose }) => {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
   const navigate = useNavigate();
   const { userData } = useSelector((state) => state.user);
 
-  // Helper to calculate total price dynamically based on duration
-  const [duration, setDuration] = useState(1); // Default 1 hour
+  const [duration, setDuration] = useState(1);
   const pricePerHour = parseFloat(service.priceAmount || service.price_amount || 0);
   const estimatedTotal = (pricePerHour * duration).toFixed(2);
 
   const onSubmit = async (data) => {
     try {
-      // 1. Construct ISO Timestamps for Backend
-      // Combine Date (YYYY-MM-DD) and Time (HH:MM)
       const startDateTime = new Date(`${data.date}T${data.time}`);
-      
-      // Calculate End Time based on duration
       const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
 
-      // Backend Payload
-      const payload = {
-        serviceId: service.id || service.ID, // Handle case sensitivity
-        scheduledStart: startDateTime.toISOString(),
-        scheduledEnd: endDateTime.toISOString(),
-        specialInstructions: data.notes || ""
-      };
+      let booking;
 
-      // 2. Call API (Stage 2 Endpoint)
-      const response = await api.post('/bookings', payload);
-      
-      // 3. Handle Success
-      const booking = response.data.data.booking;
+      if (DEV_MODE) {
+        //dev: skip API, use mock booking
+        booking = {
+          id: `dev-booking-${Date.now()}`,
+          totalAmount: estimatedTotal,
+          scheduledStart: startDateTime.toISOString(),
+          scheduledEnd: endDateTime.toISOString(),
+        };
+        console.log("Dev Mode :: mock booking created", booking);
+      } else {
+        const payload = {
+          serviceId: service.id || service.ID,
+          scheduledStart: startDateTime.toISOString(),
+          scheduledEnd: endDateTime.toISOString(),
+          specialInstructions: data.notes || "",
+        };
+        const response = await api.post("/bookings", payload);
+        booking = response.data.data.booking
+      }
+
       toast.success("Booking request sent!");
-      
-      // 4. Redirect to Payment Simulation
-      // We pass the new booking ID and calculated amount
-      navigate('/payment', { 
-        state: { 
-            bookingId: booking.id, 
-            serviceTitle: service.TITLE || service.title,
-            amount: booking.totalAmount || estimatedTotal, 
-            providerName: "Service Provider" // You might want to pass provider name from service prop
-        } 
-      });
 
+      navigate("/payment", {
+        state: {
+          bookingId: booking.id,
+          serviceTitle: service.TITLE || service.title,
+          amount: booking.totalAmount || estimatedTotal,
+          providerName: service.providerName || "Service Provider",
+        },
+      });
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.message || "Booking failed. Please try again.";

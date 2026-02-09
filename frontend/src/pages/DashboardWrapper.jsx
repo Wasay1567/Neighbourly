@@ -1,8 +1,10 @@
-import React, { use } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard'; 
 import ModeratorDashboard from './ModeratorDashboard'; 
+import SeekerDashboard from './SeekerDashboard';
+import ProviderDashboard from './ProviderDashboard';
 
 const DashboardWrapper = () => {
   const { userData } = useSelector((state) => state.user);
@@ -20,10 +22,10 @@ const DashboardWrapper = () => {
       return <ModeratorDashboard />;
     case 'ADMIN':
       return <AdminDashboard />;
-    case 'USER':
-    case 'NEIGHBOR':
-    case 'SEEKER':
-    case 'PROVIDER':
+    case 'SEEKER': 
+      return <SeekerDashboard />;
+    case 'PROVIDER': 
+    return <ProviderDashboard />;
     default:
       return <UserDashboard />;
   }

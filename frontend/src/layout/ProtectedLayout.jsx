@@ -9,11 +9,9 @@ const ProtectedLayout = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    // Security Check:
-    // If there is no token in storage AND no user in Redux, redirect to Login.
     if (!token && !userData) {
       console.warn("Unauthorized access attempt. Redirecting...");
-      navigate("/"); 
+      navigate("/");
     }
   }, [navigate, userData, token]);
 

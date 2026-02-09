@@ -3,7 +3,10 @@ import { Search, MapPin, Navigation, RotateCcw, AlertCircle } from "lucide-react
 import BookingModal from "../components/BookingModal";
 import ServiceCard from "../components/ServiceCard";
 import useGeoLocation from "../hooks/useGeoLocation";
-import api from "../utils/api"; // Ensure this imports your axios instance
+import api from "../utils/api";
+import { getSampleServices } from "@/data/sampleServices";
+
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === "TRUE";
 
 const SearchServicePage = () => {
   const { location, getLocation, error: locationError } = useGeoLocation();
@@ -11,40 +14,52 @@ const SearchServicePage = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [radius, setRadius] = useState(null); 
+  const [radius, setRadius] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
 
-  // 1. Real Fetch Logic
+  // 1. Fetch Logic (uses sample services in dev, API otherwise)
   const fetchServices = async (mode, params = {}) => {
     setLoading(true);
-    
+
+    if (DEV_MODE) {
+      let list = getSampleServices();
+      const query = (params.q || "").trim().toLowerCase();
+      if (mode === "text" && query && query !== "all") {
+        list = list.filter(
+          (s) =>
+            (s.title || s.TITLE || "").toLowerCase().includes(query) ||
+            (s.description || s.DESCRIPTION || "").toLowerCase().includes(query) ||
+            (s.category_name || s.CATEGORY || "").toLowerCase().includes(query)
+        );
+      }
+      if (mode === "nearby" && params.radius != null) {
+        list = list.filter((s) => (s.serviceRadiusKm || 5) <= (params.radius || 99));
+      }
+      setServices(list);
+      setLoading(false);
+      return;
+    }
+
     try {
-        let endpoint = '/services/search?q=all'; // Default
-        
-        if (mode === 'text') {
-            const query = params.q && params.q !== 'all' ? params.q : 'all';
-            endpoint = `/services/search?q=${encodeURIComponent(query)}`;
-        } 
-        else if (mode === 'nearby' && params.lat && params.lng) {
-            const rad = params.radius || 5;
-            endpoint = `/services/nearby?lat=${params.lat}&lng=${params.lng}&radius=${rad}`;
-        }
-
-        console.log(`Fetching: ${endpoint}`); // Debugging
-        const { data } = await api.get(endpoint);
-        
-        // Backend returns: { success: true, data: { services: [...] } }
-        if (data.success && Array.isArray(data.data.services)) {
-            setServices(data.data.services);
-        } else {
-            setServices([]);
-        }
-
-    } catch (err) {
-        console.error("Search failed:", err);
+      let endpoint = "/services/search?q=all";
+      if (mode === "text") {
+        const q = params.q && params.q !== "all" ? params.q : "all";
+        endpoint = `/services/search?q=${encodeURIComponent(q)}`;
+      } else if (mode === "nearby" && params.lat && params.lng) {
+        const rad = params.radius || 5;
+        endpoint = `/services/nearby?lat=${params.lat}&lng=${params.lng}&radius=${rad}`;
+      }
+      const { data } = await api.get(endpoint);
+      if (data.success && Array.isArray(data.data?.services)) {
+        setServices(data.data.services);
+      } else {
         setServices([]);
+      }
+    } catch (err) {
+      console.error("Search failed:", err);
+      setServices([]);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 

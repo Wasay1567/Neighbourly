@@ -1,8 +1,32 @@
 import React from "react";
 import Login from "../components/Login";
-import { CheckCircle2 } from "lucide-react"; // npm install lucide-react if missing
+import { CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { login } from "@/features/userSlice";
+import { useDispatch } from "react-redux";
+import { getSampleUserByRole } from "@/data/sampleUsers";
+
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === "TRUE";
+
+const SAMPLE_BUTTONS = [
+  { role: "provider", label: "Sample Provider (dev)" },
+  { role: "seeker", label: "Sample Seeker (dev)" },
+  { role: "moderator", label: "Sample Moderator (dev)" },
+  { role: "admin", label: "Sample Admin (dev)" },
+];
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleSampleLogin = (role) => {
+    const sample = getSampleUserByRole(role);
+    if (!sample) return;
+    localStorage.setItem("token", sample.token);
+    localStorage.setItem("devRole", role);
+    dispatch(login(sample.user));
+    navigate("/dashboard");
+  };
   return (
     <div className="min-h-screen flex bg-white">
       
@@ -74,8 +98,25 @@ const LoginPage = () => {
            </div>
            
            <Login />
+
+           {DEV_MODE && (
+             <div className="mt-6 pt-6 border-t border-gray-200 space-y-2">
+               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Demo logins (dev)</p>
+               {SAMPLE_BUTTONS.map(({ role, label }) => (
+                 <button
+                   key={role}
+                   onClick={() => handleSampleLogin(role)}
+                   className="w-full py-2.5 px-4 rounded-lg text-sm font-medium bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
+                 >
+                   {label}
+                 </button>
+               ))}
+             </div>
+           )}
         </div>
       </div>
+
+
 
     </div>
   );
