@@ -5,6 +5,7 @@ import { login, logout } from "./features/userSlice";
 import api from "./utils/api";
 import ProtectedLayout from "./layout/ProtectedLayout";
 import { getSampleUserByRole } from "@/data/sampleUsers";
+import { normalizeUser } from "@/utils/normalizeUser";
 // Pages
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -37,19 +38,7 @@ const App = () => {
           const sample = getSampleUserByRole(devRole);
           if (sample) {
             const user = sample.user;
-            const completeUser = {
-              ...user,
-              id: user.id,
-              ID: user.id,
-              role: user.role,
-              ROLE: user.role?.toUpperCase(),
-              NAME:
-                `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-            };
-
+            const completeUser = normalizeUser(user);
             dispatch(login(completeUser));
             setIsAuthChecked(true);
             console.log("Dev Mode :: session restored from sample user", {
@@ -64,20 +53,7 @@ const App = () => {
         const { data } = await api.get("/auth/me");
         const user = data.data.user;
 
-        const completeUser = {
-          ...user,
-          id: user.id,
-          ID: user.id,
-          role: user.role,
-          ROLE: user.role?.toUpperCase(), // Ensure uppercase for DashboardWrapper
-          NAME:
-            user.name ||
-            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-            user.email,
-          firstName: user.firstName, // Ensure specific fields exist
-          lastName: user.lastName,
-        };
-
+        const completeUser = normalizeUser(user);
         dispatch(login(completeUser));
       } catch (err) {
         console.error("Session restore failed:", err);

@@ -4,7 +4,8 @@ import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { login } from "@/features/userSlice.js";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../utils/api";
+import { authLogin } from "../utils/api";
+import { normalizeUser } from "@/utils/normalizeUser";
 import { 
   Search,       // for Seeker
   Briefcase,    // for Provider
@@ -28,27 +29,17 @@ const Login = () => {
     setIsLoading(true);
     try {
       // 1. API Call
-      const response = await api.post('/auth/login', { 
-        email, 
-        password
-      });
+      const response = await authLogin(email, password);
 
       // 2. Extract Data
-      const { user, token } = response.data.data; 
+      const { user, token } = response.data; 
 
       if (!token) throw new Error("No access token received");
 
       // 3. Store & State
       localStorage.setItem("token", token);
-      
-      const normalizedUser = {
-        ...user,
-        NAME: user.firstName ? `${user.firstName} ${user.lastName}` : user.email,
-        ROLE: user.role ? user.role.toUpperCase() : 'SEEKER'
-      };
-
+      const normalizedUser = normalizeUser(user);
       dispatch(login(normalizedUser));
-
       toast.success(`Welcome back, ${normalizedUser.NAME}!`);
       
       // 4. Redirect Logic
