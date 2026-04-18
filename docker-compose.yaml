@@ -1,33 +1,25 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: neighbourly_db
-    restart: unless-stopped
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle_db
     environment:
-      POSTGRES_USER: neighbourly_user
-      POSTGRES_PASSWORD: neighbourly_pass_2024
-      POSTGRES_DB: neighbourly_db
-      POSTGRES_INITDB_ARGS: "-E UTF8"
+      ORACLE_PASSWORD: oracle
+      APP_USER: app_user
+      APP_USER_PASSWORD: app_pass
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+      - "1521:1521"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U neighbourly_user -d neighbourly_db"]
+      test: ["CMD", "healthcheck.sh"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - neighbourly_network
-    command: 
-      - "postgres"
-      - "-c"
-      - "max_connections=100"
-      - "-c"
-      - "shared_buffers=256MB"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+      - ./backend/migrations:/container-entrypoint-initdb.d
 
   backend:
     build:
@@ -38,11 +30,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: neighbourly_db
-      DB_USER: neighbourly_user
-      DB_PASSWORD: neighbourly_pass_2024
+      DB_HOST: oracle_db
+      DB_PORT: 1521
+      DB_NAME: xe
+      DB_USER: app_user
+      DB_PASSWORD: app_pass
       JWT_SECRET: SafeAndSecure
       JWT_EXPIRES_IN: 7d
       BCRYPT_ROUNDS: 12
@@ -51,7 +43,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
+      oracle_db:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -61,7 +53,7 @@ services:
 
 
 volumes:
-  postgres_data:
+  oracle_data:
     driver: local
 
 networks:
