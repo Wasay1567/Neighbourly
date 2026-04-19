@@ -28,8 +28,9 @@ services:
     container_name: neighbourly_backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: dev
       PORT: 3000
+      RESEND_API_KEY: <Your-API-Key>
       DB_HOST: oracle_db
       DB_PORT: 1521
       DB_NAME: xe

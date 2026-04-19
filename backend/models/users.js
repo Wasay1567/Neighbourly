@@ -3,17 +3,17 @@ const bcrypt = require('bcryptjs');
 
 class User {
   // Create new user with profile
-  static async create({ email, password, phone, role = 'seeker', firstName, lastName, bio }) {
+  static async create({ email, password, phone, role = 'seeker', firstName, lastName, bio, otp_code, otp_expires_at }) {
     return transaction(async (client) => {
       // Hash password
       const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS || 12));
       
-      // Insert user
+      // Insert user with OTP and 'pending' status
       const userResult = await client.query(
-        `INSERT INTO users (email, password_hash, phone, role, status)
-         VALUES ($1, $2, $3, $4, 'active')
+        `INSERT INTO users (email, password_hash, phone, role, status, otp_code, otp_expires_at)
+         VALUES ($1, $2, $3, $4, 'pending_verification', $5, $6)
          RETURNING id, email, phone, role, status, created_at`,
-        [email, passwordHash, phone, role]
+        [email, passwordHash, phone, role, otp_code, otp_expires_at]
       );
       
       const user = userResult.rows[0];
@@ -41,6 +41,7 @@ class User {
       `SELECT 
         u.id, u.email, u.phone, u.role, u.status, 
         u.password_hash, u.email_verified, u.created_at,
+        u.otp_code, u.otp_expires_at, -- Added these two lines
         up.first_name, up.last_name, up.display_name, 
         up.avatar_url, up.bio, up.verification_status,
         ur.average_rating, ur.total_reviews, ur.reliability_score
@@ -53,6 +54,28 @@ class User {
     
     return result.rows[0];
   }
+
+  static async updateOTP(userId, otp, expiresAt) {
+  const sql = `
+    UPDATE users 
+    SET otp_code = $2, otp_expires_at = $3 
+    WHERE id = $1
+  `;
+  // Use 'query' (which is imported), not 'db.query'
+  return await query(sql, [userId, otp, expiresAt]);
+}
+
+  static async clearOTPAndVerify(userId) {
+  return query(
+    `UPDATE users 
+     SET otp_code = NULL, 
+         otp_expires_at = NULL, 
+         email_verified = TRUE, -- Matches your column name 'email_verified'
+         status = 'active' 
+     WHERE id = $1`,
+    [userId]
+  );
+}
 
   // Find user by ID
   static async findById(id) {
