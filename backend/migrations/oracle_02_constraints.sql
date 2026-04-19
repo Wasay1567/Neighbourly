@@ -20,7 +20,9 @@ ALTER TABLE service_availability ADD CONSTRAINT fk_avail_srv FOREIGN KEY (servic
 ALTER TABLE bookings ADD CONSTRAINT fk_book_srv FOREIGN KEY (service_id) REFERENCES service_listings(id);
 ALTER TABLE bookings ADD CONSTRAINT fk_book_seeker FOREIGN KEY (seeker_id) REFERENCES users(id);
 ALTER TABLE bookings ADD CONSTRAINT fk_book_prov FOREIGN KEY (provider_id) REFERENCES users(id);
-ALTER TABLE bookings ADD CONSTRAINT fk_book_canceller FOREIGN KEY (cancelled_by) REFERENCES users(id);
+ALTER TABLE bookings ADD CONSTRAINT fk_book_cancellation FOREIGN KEY (cancellation_id) REFERENCES cancellations(id);
+
+ALTER TABLE cancellations ADD CONSTRAINT fk_cancel_user FOREIGN KEY (cancelled_by) REFERENCES users(id);
 
 ALTER TABLE reviews ADD CONSTRAINT fk_rev_book FOREIGN KEY (booking_id) REFERENCES bookings(id);
 ALTER TABLE reviews ADD CONSTRAINT fk_rev_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id);

@@ -35,6 +35,8 @@ CREATE INDEX idx_fk_avail_srv ON service_availability(service_id);
 CREATE INDEX idx_fk_book_srv ON bookings(service_id);
 CREATE INDEX idx_fk_book_seeker ON bookings(seeker_id);
 CREATE INDEX idx_fk_book_prov ON bookings(provider_id);
+CREATE INDEX idx_fk_book_cancellation ON bookings(cancellation_id);
+CREATE INDEX idx_fk_cancel_user ON cancellations(cancelled_by);
 CREATE INDEX idx_fk_rev_book ON reviews(booking_id);
 CREATE INDEX idx_fk_tx_book ON transactions(booking_id);
 CREATE INDEX idx_fk_tx_payer ON transactions(payer_id);

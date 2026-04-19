@@ -15,6 +15,7 @@ DROP TABLE disputes;
 DROP TABLE transactions;
 DROP TABLE reviews;
 DROP TABLE bookings;
+DROP TABLE cancellations;
 
 -- 3. DROP SERVICES
 DROP TABLE service_availability;

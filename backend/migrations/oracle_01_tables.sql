@@ -187,7 +187,15 @@ CREATE TABLE service_availability (
 -- 4. BOOKINGS & TRANSACTIONS
 -- ============================================================================
 
--- need to add another table with the cancellation details and link it to booking for normalization 
+CREATE TABLE cancellations (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    reason CLOB,
+    cancelled_by RAW(16) NOT NULL,
+    cancelled_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE bookings (
     id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
     service_id RAW(16) NOT NULL,
@@ -204,13 +212,9 @@ CREATE TABLE bookings (
     special_instructions CLOB,
     confirmed_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
+    cancellation_id RAW(16),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-
-    cancellation_reason CLOB,
-    cancelled_by RAW(16),
-    cancelled_at TIMESTAMP WITH TIME ZONE,
     
     CONSTRAINT booking_status_check CHECK (status IN ('pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'disputed')),
     CONSTRAINT no_self_book CHECK (seeker_id != provider_id),
