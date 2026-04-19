@@ -181,6 +181,398 @@ To manually run migrations:
 docker-compose exec postgres psql -U neighbourly_user -d neighbourly_db -f /docker-entrypoint-initdb.d/001_initial_schema.sql
 ```
 
+## API Documentation
+
+Base URL:
+
+```text
+http://localhost:3000
+```
+
+API prefix:
+
+```text
+/api/v1
+```
+
+### Authentication
+
+Protected endpoints require JWT Bearer auth:
+
+```http
+Authorization: Bearer <token>
+```
+
+Roles used by RBAC:
+- `seeker`
+- `provider`
+- `moderator`
+- `admin`
+
+### Response format
+
+Successful responses:
+
+```json
+{
+  "success": true,
+  "message": "Optional message",
+  "data": {}
+}
+```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "status": "fail|error",
+  "message": "Human-readable error"
+}
+```
+
+---
+
+### Health endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | No | Service health and uptime |
+| GET | `/health/db` | No | Database connectivity and version |
+| GET | `/health/pool` | No | PostgreSQL pool stats |
+
+### API index endpoint
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/v1` | No | API metadata and feature summary |
+
+---
+
+### Auth endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/auth/register` | No | Register new user and return token |
+| POST | `/api/v1/auth/login` | No | Login and return token |
+| GET | `/api/v1/auth/me` | Yes | Get current user profile |
+| PATCH | `/api/v1/auth/profile` | Yes | Update current user profile |
+
+`POST /api/v1/auth/register` request body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123!",
+  "phone": "+1234567890",
+  "role": "seeker",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "bio": "Optional bio"
+}
+```
+
+`POST /api/v1/auth/login` request body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123!"
+}
+```
+
+`PATCH /api/v1/auth/profile` request body:
+
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "bio": "Updated bio",
+  "avatarUrl": "https://example.com/avatar.png"
+}
+```
+
+---
+
+### Location endpoints
+
+#### Public
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/v1/locations/cities` | No | List active cities |
+| GET | `/api/v1/locations/cities/:id` | No | Get city by id |
+| GET | `/api/v1/locations/cities/:cityId/neighborhoods` | No | List neighborhoods in city |
+| GET | `/api/v1/locations/neighborhoods/:id` | No | Get neighborhood by id |
+| GET | `/api/v1/locations/neighborhoods/find?lat=..&lng=..` | No | Resolve neighborhood by coordinates |
+| GET | `/api/v1/locations/categories` | No | List grouped categories + flat list |
+| GET | `/api/v1/locations/categories/:id` | No | Get category and subcategories |
+
+#### Admin only
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/locations/cities` | Yes (`admin`) | Create city |
+| POST | `/api/v1/locations/neighborhoods` | Yes (`admin`) | Create neighborhood |
+| POST | `/api/v1/locations/categories` | Yes (`admin`) | Create category/subcategory |
+
+`POST /api/v1/locations/cities` request body:
+
+```json
+{
+  "name": "New York",
+  "stateProvince": "NY",
+  "country": "United States",
+  "countryCode": "US",
+  "timezone": "America/New_York"
+}
+```
+
+`POST /api/v1/locations/neighborhoods` request body:
+
+```json
+{
+  "cityId": 1,
+  "name": "Downtown",
+  "description": "Core urban area",
+  "coordinates": [[40.7128, -74.006], [40.715, -74.002], [40.709, -74.001]]
+}
+```
+
+`POST /api/v1/locations/categories` request body:
+
+```json
+{
+  "parentId": null,
+  "name": "Home Services",
+  "description": "General home services",
+  "iconUrl": "https://example.com/icon.png",
+  "sortOrder": 1
+}
+```
+
+---
+
+### Service endpoints
+
+#### Public
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/v1/services/nearby` | No | Find nearby services (currently expects filter values in request body) |
+| GET | `/api/v1/services/search?q=...` | No | Text search services |
+| GET | `/api/v1/services/:id` | No | Get service details |
+
+#### Provider/Admin
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/services` | Yes (`provider`,`admin`) | Create service listing |
+| GET | `/api/v1/services/my/services` | Yes (`provider`,`admin`) | Get own services |
+| PATCH | `/api/v1/services/:id` | Yes (`provider`,`admin`) | Update own service |
+| DELETE | `/api/v1/services/:id` | Yes (`provider`,`admin`) | Soft delete own service |
+
+`POST /api/v1/services` request body:
+
+```json
+{
+  "categoryId": 10,
+  "title": "Plumbing Services",
+  "description": "Full plumbing support",
+  "shortDescription": "Pipes, leaks, fixtures",
+  "priceAmount": 50,
+  "priceUnit": "per_hour",
+  "serviceRadiusKm": 5,
+  "durationMinutes": 60,
+  "streetAddress": "123 Main St",
+  "cityId": 1,
+  "neighborhoodId": 2,
+  "postalCode": "10001",
+  "latitude": 40.7128,
+  "longitude": -74.006
+}
+```
+
+`PATCH /api/v1/services/:id` request body supports fields such as:
+
+```json
+{
+  "title": "Updated title",
+  "description": "Updated description",
+  "short_description": "Updated short description",
+  "price_amount": 55,
+  "price_unit": "per_hour",
+  "service_radius_km": 7,
+  "duration_minutes": 90,
+  "status": "active"
+}
+```
+
+---
+
+### Booking endpoints
+
+All booking endpoints require authentication.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/bookings` | Yes | Create booking |
+| GET | `/api/v1/bookings` | Yes | List my bookings (`role`, `status`, `page`, `limit`) |
+| GET | `/api/v1/bookings/upcoming` | Yes | List upcoming bookings |
+| GET | `/api/v1/bookings/:id` | Yes | Get booking details (participant only) |
+| PATCH | `/api/v1/bookings/:id/status` | Yes | Update status (`confirmed`,`in_progress`,`completed`,`cancelled`) |
+| POST | `/api/v1/bookings/:id/cancel` | Yes | Cancel booking |
+
+`POST /api/v1/bookings` request body:
+
+```json
+{
+  "serviceId": "uuid",
+  "scheduledStart": "2026-04-20T10:00:00.000Z",
+  "scheduledEnd": "2026-04-20T12:00:00.000Z",
+  "specialInstructions": "Optional notes"
+}
+```
+
+`PATCH /api/v1/bookings/:id/status` request body:
+
+```json
+{
+  "status": "confirmed"
+}
+```
+
+`POST /api/v1/bookings/:id/cancel` request body:
+
+```json
+{
+  "reason": "Change of plans"
+}
+```
+
+---
+
+### Transaction endpoints
+
+All transaction endpoints require authentication.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/transactions/pay` | Yes | Create demo payment for pending booking (seeker only) |
+| GET | `/api/v1/transactions` | Yes | List my transactions (`type`, `page`, `limit`) |
+| GET | `/api/v1/transactions/earnings` | Yes (`provider`,`admin`) | Earnings summary |
+| GET | `/api/v1/transactions/:id` | Yes | Transaction detail (payer/payee only) |
+
+`POST /api/v1/transactions/pay` request body:
+
+```json
+{
+  "bookingId": "uuid",
+  "paymentMethod": "demo_card"
+}
+```
+
+---
+
+### Review endpoints
+
+#### Public
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/v1/reviews/provider/:providerId` | No | Provider reviews and rating stats |
+| GET | `/api/v1/reviews/:id` | No | Review details |
+
+#### Authenticated
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/reviews` | Yes | Create review (validated by booking state/ownership) |
+| POST | `/api/v1/reviews/:id/response` | Yes | Add review response |
+| POST | `/api/v1/reviews/:id/flag` | Yes | Flag review for moderation |
+
+`POST /api/v1/reviews` request body:
+
+```json
+{
+  "bookingId": "uuid",
+  "rating": 5,
+  "title": "Great service",
+  "comment": "Very professional",
+  "isAnonymous": false
+}
+```
+
+`POST /api/v1/reviews/:id/response` request body:
+
+```json
+{
+  "response": "Thank you for your feedback"
+}
+```
+
+`POST /api/v1/reviews/:id/flag` request body:
+
+```json
+{
+  "reason": "Inappropriate language"
+}
+```
+
+---
+
+### Dispute endpoints
+
+All dispute endpoints require authentication.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/disputes` | Yes | Create dispute |
+| GET | `/api/v1/disputes/my` | Yes | List my disputes |
+| GET | `/api/v1/disputes/:id` | Yes | Dispute details (participant/assigned moderator/admin) |
+| GET | `/api/v1/disputes/regional` | Yes (`moderator`,`admin`) | Regional disputes (`neighborhoodIds` required) |
+| POST | `/api/v1/disputes/:id/assign` | Yes (`moderator`,`admin`) | Assign dispute to self |
+| POST | `/api/v1/disputes/:id/resolve` | Yes (`moderator`,`admin`) | Resolve dispute |
+| POST | `/api/v1/disputes/:id/close` | Yes (`moderator`,`admin`) | Close dispute |
+
+`POST /api/v1/disputes` request body:
+
+```json
+{
+  "bookingId": "uuid",
+  "category": "service_quality",
+  "description": "The delivered service did not match agreement",
+  "evidence": [
+    { "type": "image", "url": "https://example.com/evidence-1.jpg" }
+  ]
+}
+```
+
+`POST /api/v1/disputes/:id/resolve` request body:
+
+```json
+{
+  "resolution": "Refund approved after review"
+}
+```
+
+---
+
+### Quick endpoint matrix
+
+| Domain | Endpoint count |
+|--------|----------------|
+| Health | 3 |
+| API index | 1 |
+| Auth | 4 |
+| Locations | 10 |
+| Services | 7 |
+| Bookings | 6 |
+| Transactions | 4 |
+| Reviews | 5 |
+| Disputes | 7 |
+| **Total** | **47** |
+
 ## 🗺️ H3 Geospatial Implementation
 
 ### Why H3?
@@ -336,10 +728,13 @@ INSERT INTO audit_logs (
 curl http://localhost:3000/health
 
 # Database connection test
-curl http://localhost:3000/api/v1/health/db
+curl http://localhost:3000/health/db
 
 # Pool statistics
-curl http://localhost:3000/api/v1/health/pool
+curl http://localhost:3000/health/pool
+
+# API metadata
+curl http://localhost:3000/api/v1
 ```
 
 ### Load Testing (Future)
