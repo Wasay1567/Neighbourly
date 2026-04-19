@@ -1,0 +1,166 @@
+2026-04-18 10:17:36:1736 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-18 10:17:45:1745 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:17:54:1754 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:18:02:182 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:18:11:1811 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:18:19:1819 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:18:29:1829 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:18:44:1844 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-18 10:19:03:193 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:19:35:1935 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:20:33:2033 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:21:39:2139 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:22:47:2247 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-18 10:23:54:2354 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-18 10:25:01:251 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:26:07:267 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-18 10:27:49:2749 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:27:51:2751 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:27:53:2753 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:27:56:2756 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:27:58:2758 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:28:02:282 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:28:07:287 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:28:16:2816 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:28:31:2831 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:28:58:2858 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:29:51:2951 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:30:54:3054 [ERROR]: Database connection failed {
+  "error": "The server does not support SSL connections"
+}
+2026-04-18 10:33:31:3331 [ERROR]: Invalid email or password {
+  "statusCode": 401,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-18 10:34:43:3443 [ERROR]: Transaction rolled back {
+  "error": "new row for relation \"users\" violates check constraint \"phone_format\""
+}
+2026-04-18 10:34:43:3443 [ERROR]: new row for relation "users" violates check constraint "phone_format" {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-18 15:46:33:4633 [ERROR]: Transaction rolled back {
+  "error": "new row for relation \"users\" violates check constraint \"phone_format\""
+}
+2026-04-18 15:46:33:4633 [ERROR]: new row for relation "users" violates check constraint "phone_format" {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-18 15:48:49:4849 [ERROR]: Invalid email or password {
+  "statusCode": 401,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-18 15:49:21:4921 [ERROR]: Email already registered {
+  "statusCode": 409,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-18 15:49:38:4938 [ERROR]: Invalid email or password {
+  "statusCode": 401,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-18 15:51:12:5112 [ERROR]: Invalid email or password {
+  "statusCode": 401,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-19 08:06:38:638 [ERROR]: User.updateOTP is not a function {
+  "statusCode": 500,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-19 08:07:04:74 [ERROR]: Email already registered {
+  "statusCode": 409,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-19 08:07:26:726 [ERROR]: Transaction rolled back {
+  "error": "invalid input value for enum user_status: \"pending\""
+}
+2026-04-19 08:07:26:726 [ERROR]: invalid input value for enum user_status: "pending" {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-19 09:01:34:134 [ERROR]: Transaction rolled back {
+  "error": "invalid input value for enum user_status: \"pending\""
+}
+2026-04-19 09:01:34:134 [ERROR]: invalid input value for enum user_status: "pending" {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-19 09:03:54:354 [ERROR]: Invalid email or password {
+  "statusCode": 401,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-19 09:04:07:47 [ERROR]: db is not defined {
+  "statusCode": 500,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2026-04-19 09:09:42:942 [ERROR]: db is not defined {
+  "statusCode": 500,
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}

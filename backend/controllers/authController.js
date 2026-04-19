@@ -1,6 +1,7 @@
 const User = require('../models/users');
 const jwt = require('jsonwebtoken');
 const { AppError } = require('../utils/errors');
+const { sendOTP } = require('../utils/mailer'); // You'll need to create this utility
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -9,6 +10,9 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
+
+// Helper to generate 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Register new user
 exports.register = async (req, res, next) => {
@@ -21,24 +25,32 @@ exports.register = async (req, res, next) => {
       throw new AppError('Email already registered', 409);
     }
     
-    // Create user
+    // Create OTP and Expiry (10 minutes)
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60000);
+
+    // Create user (Note: set status to 'pending' or similar if your logic requires)
     const user = await User.create({
-      email, password, phone, role, firstName, lastName, bio
+      email, 
+      password, 
+      phone, 
+      role, 
+      firstName, 
+      lastName, 
+      bio,
+      //status: 'pending_verification', // Use the exact string from your DB enum
+      otp_code: otp,
+      otp_expires_at: otpExpires
     });
     
-    // Generate token
-    const token = generateToken(user.id);
+    // Send OTP via Resend
+    await sendOTP(email, otp);
     
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration successful. Please verify the OTP sent to your email.',
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role
-        },
-        token
+        email: user.email
       }
     });
   } catch (error) {
@@ -63,23 +75,63 @@ exports.login = async (req, res, next) => {
       throw new AppError('Invalid email or password', 401);
     }
     
-    // Check account status
-    if (user.status !== 'active') {
-      throw new AppError('Account is not active', 403);
+    // Generate new OTP for login
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60000);
+
+    // Save OTP to user record
+    await User.updateOTP(user.id, otp, otpExpires);
+    
+    // Send OTP via Resend
+    await sendOTP(email, otp);
+    
+    res.json({
+      success: true,
+      message: 'OTP sent to your email. Please verify to complete login.',
+      data: {
+        email: user.email
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Verify OTP (New Method)
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findByEmail(email);
+    if (!user) {
+      throw new AppError('User not found', 404);
     }
+
+    // Validate OTP and Expiration
+    const isOtpValid = user.otp_code === otp;
+    const isNotExpired = new Date() < new Date(user.otp_expires_at);
+
+    if (!isOtpValid || !isNotExpired) {
+      throw new AppError('Invalid or expired OTP', 400);
+    }
+
+    // Clear OTP and activate user
+    await User.clearOTPAndVerify(user.id);
     
     // Update last login
     await User.updateLastLogin(user.id);
     
-    // Generate token
+    // Generate Final JWT
     const token = generateToken(user.id);
     
-    // Remove sensitive data
+    // Clean up sensitive data before response
     delete user.password_hash;
-    
+    delete user.otp_code;
+    delete user.otp_expires_at;
+
     res.json({
       success: true,
-      message: 'Login successful',
+      message: 'Verification successful',
       data: {
         user,
         token

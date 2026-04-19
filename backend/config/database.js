@@ -22,8 +22,9 @@ const config = {
   // Query timeout (25 seconds)
   query_timeout: 25000,
   
-  // SSL configuration for production
-  ssl: process.env.NODE_ENV === 'production' ? {
+  // SSL configuration: Fixed to prevent crashes in local Docker environments
+  // Only enables SSL if NODE_ENV is production AND DB_SSL is explicitly 'true'
+  ssl: (process.env.NODE_ENV === 'production' && process.env.DB_SSL === 'true') ? {
     rejectUnauthorized: false,
     ca: process.env.DB_CA_CERT,
   } : false,
