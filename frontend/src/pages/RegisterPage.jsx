@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  //const dispatch = useDispatch();
   
   const { 
     register, 
@@ -24,14 +24,14 @@ const RegisterPage = () => {
         role: data.role, 
         firstName: data.firstName, 
         lastName: data.lastName,
-        phone: data.phone,
+        phone: data.phone.replace(/\s+/g, ''),
         bio: "" 
       };
 
       const response = await api.post('/auth/register', payload);
-      const { user: apiUser, token } = response.data.data;
+      //const { user: apiUser, token } = response.data.data;
 
-      if (token) {
+      /*if (token) {
         localStorage.setItem("token", token);
         
         const completeUser = { 
@@ -54,6 +54,12 @@ const RegisterPage = () => {
       } else {
         toast.success("Account created! Please login.");
         navigate('/');
+      }*/
+
+      if (response.data.success) {
+        toast.success("OTP sent to your email!");
+        // Pass the email to the next page so the user doesn't have to re-type it
+        navigate('/verify-otp', { state: { email: data.email } });
       }
 
     } catch (err) {

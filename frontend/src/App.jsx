@@ -8,6 +8,7 @@ import { getSampleUserByRole } from "@/data/sampleUsers";
 // Pages
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import VerifyOTP from "./components/VerifyOTP.jsx";
 import DashboardWrapper from "./pages/DashboardWrapper";
 import SearchServicePage from "./pages/SearchServicePage";
 import ServiceDetails from "./pages/ServiceDetails";
@@ -105,6 +106,7 @@ const App = () => {
       {/* --- PUBLIC ROUTES --- */}
       <Route path="/" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-otp" element={<VerifyOTP />} />
 
       {/* --- PROTECTED ROUTES --- */}
       <Route element={<ProtectedLayout />}>
