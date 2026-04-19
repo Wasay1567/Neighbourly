@@ -35,11 +35,11 @@ export const authUpdateProfile = async (payload) => {
   return response.data;
 };
 
-// ============= SERVICES ENDPOINTS =============
-export const getServiceById = async (id) => {
-  const response = await api.get(`/services/${id}`);
-  return response.data;
-};
+// // ============= SERVICES ENDPOINTS =============
+// export const getServiceById = async (id) => {
+//   const response = await api.get(`/services/${id}`);
+//   return response.data;
+// };
 
 export const deleteService = async (id) => {
   const response = await api.delete(`/services/${id}`);
@@ -167,3 +167,9 @@ export const getCategories = async () => {
 };
 
 export default api;
+
+
+/*
+is it actually fetching all neighbourhoods in the city
+
+*/

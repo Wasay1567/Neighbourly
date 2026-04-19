@@ -148,7 +148,7 @@ const CreateForm = ({ setServices, closeForm }) => {
             ) : location.loaded ? (
                 <>
                     <MapPin size={18} className="shrink-0" />
-                    <span>GPS: {location.coordinates.lat.toFixed(4)}, {location.coordinates.lng.toFixed(4)}</span>
+                    <span>GPS: {Number(location.coordinates.lat).toFixed(4)}, {Number(location.coordinates.lng).toFixed(4)}</span>
                 </>
             ) : (
                 <>

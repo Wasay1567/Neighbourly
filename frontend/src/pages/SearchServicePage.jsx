@@ -5,6 +5,8 @@ import ServiceCard from "../components/ServiceCard";
 import useGeoLocation from "../hooks/useGeoLocation";
 import api from "../utils/api";
 import { getSampleServices } from "@/data/sampleServices";
+import ReviewModal from "@/components/ReviewModal";
+import ReviewDialog from "@/components/ReviewDialog";
 
 const DEV_MODE = import.meta.env.VITE_DEV_MODE === "TRUE";
 
@@ -16,6 +18,8 @@ const SearchServicePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [radius, setRadius] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
+  const [isBookOpen, setIsBookOpen] = useState(false);
 
   // 1. Fetch Logic (uses sample services in dev, API otherwise)
   const fetchServices = async (mode, params = {}) => {
@@ -200,7 +204,14 @@ const SearchServicePage = () => {
                     <ServiceCard 
                         key={s.id || s.ID} 
                         service={s} 
-                        onBook={() => setSelectedService(s)} 
+                        onBook={() => {
+                          setSelectedService(s)
+                          setIsBookOpen(true)
+                        }}
+                        onReview={() => {
+                          setSelectedService(s);
+                          setIsReviewOpen(true);
+                        }}
                     />
                 ))
             ) : (
@@ -223,10 +234,16 @@ const SearchServicePage = () => {
       </div>
 
       {/* Booking Modal */}
-      {selectedService && (
+      {isBookOpen && (
         <BookingModal 
           service={selectedService} 
-          onClose={() => setSelectedService(null)} 
+          onClose={() => setIsBookOpen(false)} 
+        />
+      )}
+      {isReviewOpen && (
+        <ReviewDialog
+        service= {selectedService}
+          onClose={()=> setIsReviewOpen(false)}
         />
       )}
     </div>
