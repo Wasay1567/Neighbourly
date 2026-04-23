@@ -17,7 +17,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeRole, setActiveRole] = useState("seeker"); // Default to Seeker
+  const [activeRole, setActiveRole] = useState("seeker"); 
   
   const { register, handleSubmit, formState: { errors } } = useForm();
 
@@ -31,32 +31,15 @@ const Login = () => {
       // 1. API Call
       const response = await authLogin(email, password);
 
-      // 2. Extract Data
-      const { user, token } = response.data; 
-
-      if (!token) throw new Error("No access token received");
-
-      // 3. Store & State
-      localStorage.setItem("token", token);
-      const normalizedUser = normalizeUser(user);
-      dispatch(login(normalizedUser));
-      toast.success(`Welcome back, ${normalizedUser.NAME}!`);
-      
-      // 4. Redirect Logic
-      // We check the ACTUAL role from the database, not just the tab they clicked
-      const userRole = user.role?.toLowerCase();
-      
-      // if (userRole === 'admin') {
-      //     navigate("/dashboard");
-      // } else if (userRole === 'moderator') {
-      //     navigate("/dashboard");
-      // } else {
-      //     // Standard users (Seekers & Providers) go to same dashboard
-      //     // The dashboard handles what they see internally
-      //     navigate("/dashboard");
-      // }
-
-      navigate("/dashboard");
+      // 2. Logic Change: Handle OTP Flow
+      // If the login is successful, the backend now sends an OTP and returns success
+      if (response.data.success) {
+        toast.success("Verification code sent to your email!");
+        
+        // Redirect to your OTP verification component/page
+        // We pass the email in state so the OTP component knows who to verify
+        navigate("/verify-otp", { state: { email } });
+      }
 
     } catch (err) {
       console.error("Login Error:", err);
