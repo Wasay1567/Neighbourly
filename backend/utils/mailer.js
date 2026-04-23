@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 exports.sendOTP = async (email, otp) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Neighbourly <onboarding@resend.dev>', // Use verified domain for production
+      from: process.env.RESEND_FROM_EMAIL, // Use verified domain for production
       to: email,
       subject: 'Verify your Neighbourly Account',
       html: `
