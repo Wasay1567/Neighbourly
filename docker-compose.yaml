@@ -35,20 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: neighbourly_backend
     restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      RESEND_API_KEY: <Your-API-Key>
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: neighbourly_db
-      DB_USER: neighbourly_user
-      DB_PASSWORD: neighbourly_pass_2024
-      JWT_SECRET: SafeAndSecure
-      JWT_EXPIRES_IN: 7d
-      BCRYPT_ROUNDS: 12
-      RATE_LIMIT_WINDOW_MS: 900000
-      RATE_LIMIT_MAX_REQUESTS: 100
+    env_file: .env
     ports:
       - "3000:3000"
     depends_on:
