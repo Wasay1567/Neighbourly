@@ -1,14 +1,12 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: neighbourly_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: neighbourly_user
-      POSTGRES_PASSWORD: neighbourly_pass_2024
-      POSTGRES_DB: neighbourly_db
+      POSTGRES_USER: ${DB_USER:-neighbourly_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-neighbourly_pass_2024}
+      POSTGRES_DB: ${DB_NAME:-neighbourly_db}
       POSTGRES_INITDB_ARGS: "-E UTF8"
     ports:
       - "5432:5432"
@@ -16,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U neighbourly_user -d neighbourly_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-neighbourly_user} -d ${DB_NAME:-neighbourly_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
