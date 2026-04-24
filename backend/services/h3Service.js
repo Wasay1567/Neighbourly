@@ -244,15 +244,22 @@ class H3Service {
    */
   polygonToCells(polygon, resolution = this.defaultResolution) {
     try {
-      // Convert [[lat, lng], ...] to GeoJSON format
-      const geoJsonPolygon = polygon.map(([lat, lng]) => [lng, lat]);
-      const first = geoJsonPolygon[0];
-      const last = geoJsonPolygon[geoJsonPolygon.length - 1];
-      
-      if (first[0] !== last[0] || first[1] !== last[1]) {
-        geoJsonPolygon.push(first);
-      }
-      return h3.polygonToCells([geoJsonPolygon], resolution);
+      const rings = Array.isArray(polygon[0][0]) ? polygon : [polygon];
+
+      // Convert incoming [lng, lat] rings into GeoJSON coordinates for H3.
+      const geoJsonPolygon = rings.map((ring) => {
+        const convertedRing = ring.map(([lng, lat]) => [lng, lat]);
+        const first = convertedRing[0];
+        const last = convertedRing[convertedRing.length - 1];
+
+        if (first[0] !== last[0] || first[1] !== last[1]) {
+          convertedRing.push(first);
+        }
+
+        return convertedRing;
+      });
+
+      return h3.polygonToCells(geoJsonPolygon, resolution, true);
     } catch (error) {
       logger.error('Error converting polygon to H3 cells', { 
         polygon, resolution, error: error.message 
