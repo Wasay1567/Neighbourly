@@ -123,9 +123,9 @@ class Booking {
   static async updateStatus(id, status, userId) {
     const result = await query(
       `UPDATE bookings 
-       SET status = $2,
-           confirmed_at = CASE WHEN $2 = 'confirmed' THEN CURRENT_TIMESTAMP ELSE confirmed_at END,
-           completed_at = CASE WHEN $2 = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END,
+       SET status = $2::booking_status,
+           confirmed_at = CASE WHEN $2::booking_status = 'confirmed' THEN CURRENT_TIMESTAMP ELSE confirmed_at END,
+           completed_at = CASE WHEN $2::booking_status = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 
          AND (seeker_id = $3 OR provider_id = $3)
