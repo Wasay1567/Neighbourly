@@ -6,11 +6,34 @@ const { AppError } = require('../utils/errors');
 exports.createBooking = async (req, res, next) => {
   try {
     const { serviceId, scheduledStart, scheduledEnd, specialInstructions } = req.body;
+
+    if (!serviceId || !scheduledStart || !scheduledEnd) {
+      throw new AppError('serviceId, scheduledStart, and scheduledEnd are required', 400);
+    }
+
+    const startTime = new Date(scheduledStart);
+    const endTime = new Date(scheduledEnd);
+
+    if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
+      throw new AppError('scheduledStart and scheduledEnd must be valid ISO date-time values', 400);
+    }
+
+    if (endTime <= startTime) {
+      throw new AppError('scheduledEnd must be after scheduledStart', 400);
+    }
+
+    if (startTime <= new Date()) {
+      throw new AppError('scheduledStart must be in the future', 400);
+    }
     
     // Get service details
     const service = await Service.findById(serviceId);
     if (!service) {
       throw new AppError('Service not found', 404);
+    }
+
+    if (service.status !== 'active') {
+      throw new AppError('Service is not available for booking', 400);
     }
     
     // Prevent self-booking
@@ -19,16 +42,25 @@ exports.createBooking = async (req, res, next) => {
     }
     
     // Calculate total amount (simplified - you can add complex pricing logic)
-    const hours = (new Date(scheduledEnd) - new Date(scheduledStart)) / (1000 * 60 * 60);
-    const totalAmount = service.price_amount * hours;
+    const hours = (endTime - startTime) / (1000 * 60 * 60);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      throw new AppError('Invalid booking duration', 400);
+    }
+
+    const unitPrice = Number(service.price_amount);
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+      throw new AppError('Service pricing is invalid', 400);
+    }
+
+    const totalAmount = unitPrice * hours;
     
     // Create booking
     const booking = await Booking.create({
       serviceId,
       seekerId: req.user.id,
       providerId: service.provider_id,
-      scheduledStart,
-      scheduledEnd,
+      scheduledStart: startTime.toISOString(),
+      scheduledEnd: endTime.toISOString(),
       totalAmount,
       specialInstructions
     });
