@@ -74,22 +74,27 @@ exports.login = async (req, res, next) => {
     if (!isValidPassword) {
       throw new AppError('Invalid email or password', 401);
     }
-    
-    // Generate new OTP for login
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60000);
 
-    // Save OTP to user record
-    await User.updateOTP(user.id, otp, otpExpires);
-    
-    // Send OTP via Resend
-    await sendOTP(email, otp);
+    // Registration requires OTP verification before login can issue JWT.
+    if (user.status !== 'active') {
+      throw new AppError('Please verify your registration OTP before login', 403);
+    }
+
+    // Update last login and return token directly.
+    await User.updateLastLogin(user.id);
+    const token = generateToken(user.id);
+
+    // Clean up sensitive data before response
+    delete user.password_hash;
+    delete user.otp_code;
+    delete user.otp_expires_at;
     
     res.json({
       success: true,
-      message: 'OTP sent to your email. Please verify to complete login.',
+      message: 'Login successful',
       data: {
-        email: user.email
+        user,
+        token
       }
     });
   } catch (error) {
@@ -97,7 +102,7 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// Verify OTP (New Method)
+// Verify OTP (Registration only)
 exports.verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -105,6 +110,10 @@ exports.verifyOTP = async (req, res, next) => {
     const user = await User.findByEmail(email);
     if (!user) {
       throw new AppError('User not found', 404);
+    }
+
+    if (user.status !== 'pending_verification') {
+      throw new AppError('OTP verification is only required for new registrations', 400);
     }
 
     // Validate OTP and Expiration

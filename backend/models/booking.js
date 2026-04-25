@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/database');
+const { AppError } = require('../utils/errors');
 
 class Booking {
   // Create booking
@@ -22,7 +23,7 @@ class Booking {
       );
       
       if (conflictCheck.rows.length > 0) {
-        throw new Error('Time slot not available');
+        throw new AppError('Time slot not available', 409);
       }
       
       // Create booking
