@@ -22,7 +22,7 @@ exports.createService = async (req, res, next) => {
 // Get nearby services
 exports.getNearbyServices = async (req, res, next) => {
   try {
-    const { lat, lng, radius = 5, categoryId, minPrice, maxPrice, page = 1, limit = 20 } = req.body;
+    const { lat, lng, radius = 5, categoryId, minPrice, maxPrice, page = 1, limit = 20 } = req.query;
     
     if (!lat || !lng) {
       throw new AppError('Latitude and longitude are required', 400);
