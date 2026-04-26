@@ -158,7 +158,7 @@ class Booking {
          LEFT JOIN cancellations c ON b.cancellation_id = c.id
          WHERE b.id = $1
            AND (b.seeker_id = $2 OR b.provider_id = $2)
-         FOR UPDATE`,
+         FOR UPDATE OF b`,
         [id, userId]
       );
 
@@ -196,6 +196,7 @@ class Booking {
       );
 
       return {
+        ...updatedBookingResult.rows[0],
         cancellation_reason: cancellation.reason,
         cancellation_cancelled_by: cancellation.cancelled_by,
         cancellation_cancelled_at: cancellation.cancelled_at
