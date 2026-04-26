@@ -166,6 +166,12 @@ class ReputationCron {
       avg_response_time_minutes
     } = bookingStats.rows[0];
 
+    // Persist response_time_minutes as INTEGER to match schema.
+    const responseTimeMinutesForDb =
+      avg_response_time_minutes === null || avg_response_time_minutes === undefined
+        ? null
+        : Math.round(parseFloat(avg_response_time_minutes));
+
     // Calculate cancellation rate
     const totalAsProvider = parseInt(total_bookings_as_provider) || 0;
     const cancelledAsProvider = parseInt(cancelled_as_provider) || 0;
@@ -258,7 +264,7 @@ class ReputationCron {
         userId, total_reviews, average_rating,
         total_bookings_as_provider, total_bookings_as_seeker,
         completed_bookings_as_provider, completed_bookings_as_seeker,
-        cancellationRate, avg_response_time_minutes, reliabilityScore
+        cancellationRate, responseTimeMinutesForDb, reliabilityScore
       ]
     );
 
