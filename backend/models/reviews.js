@@ -133,8 +133,8 @@ class Review {
     );
   }
 
-  // Get reviews for a provider
-  static async findByProvider(providerId, options = {}) {
+  // Get reviews for a service
+  static async findByService(serviceId, options = {}) {
     const { limit = 5, offset = 0 } = options;
     
     const result = await query(
@@ -156,13 +156,18 @@ class Review {
        INNER JOIN service_listings sl ON b.service_id = sl.id
        INNER JOIN users u ON r.reviewer_id = u.id
        INNER JOIN user_profiles reviewer ON u.id = reviewer.user_id
-       WHERE r.reviewee_id = $1
+       WHERE b.service_id = $1
        ORDER BY r.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [providerId, limit, offset]
+      [serviceId, limit, offset]
     );
     
     return result.rows;
+  }
+
+  // Backward-compatible alias for older provider-based callers
+  static async findByProvider(providerId, options = {}) {
+    return this.findByService(providerId, options);
   }
 
   // Get review by ID
@@ -219,8 +224,8 @@ class Review {
     return result.rows[0];
   }
 
-  // Get rating statistics
-  static async getRatingStats(providerId) {
+  // Get rating statistics for a service
+  static async getRatingStatsByService(serviceId) {
     const result = await query(
       `SELECT 
         COUNT(*) as total_reviews,
@@ -230,12 +235,18 @@ class Review {
         COUNT(CASE WHEN rating = 3 THEN 1 END) as three_star,
         COUNT(CASE WHEN rating = 2 THEN 1 END) as two_star,
         COUNT(CASE WHEN rating = 1 THEN 1 END) as one_star
-       FROM reviews
-       WHERE reviewee_id = $1`,
-      [providerId]
+       FROM reviews r
+       INNER JOIN bookings b ON r.booking_id = b.id
+       WHERE b.service_id = $1`,
+      [serviceId]
     );
     
     return result.rows[0];
+  }
+
+  // Backward-compatible alias for older provider-based callers
+  static async getRatingStats(providerId) {
+    return this.getRatingStatsByService(providerId);
   }
 }
 

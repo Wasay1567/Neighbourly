@@ -5,6 +5,7 @@ const { authenticate } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 
 // Public routes - view reviews
+router.get('/service/:serviceId', asyncHandler(reviewController.getServiceReviews));
 router.get('/provider/:providerId', asyncHandler(reviewController.getProviderReviews));
 router.get('/:id', asyncHandler(reviewController.getReview));
 

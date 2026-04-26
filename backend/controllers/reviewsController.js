@@ -33,7 +33,39 @@ exports.createReview = async (req, res, next) => {
   }
 };
 
-// Get reviews for a provider
+// Get reviews for a service
+exports.getServiceReviews = async (req, res, next) => {
+  try {
+    const { serviceId } = req.params;
+    const { page = 1, limit = 5 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    const reviews = await Review.findByService(serviceId, {
+      limit: parseInt(limit),
+      offset
+    });
+    
+    // Get rating statistics
+    const stats = await Review.getRatingStatsByService(serviceId);
+    
+    res.json({
+      success: true,
+      data: {
+        reviews,
+        stats,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: reviews.length
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Backward-compatible provider route: returns reviews for the services owned by the provider
 exports.getProviderReviews = async (req, res, next) => {
   try {
     const { providerId } = req.params;
@@ -45,7 +77,6 @@ exports.getProviderReviews = async (req, res, next) => {
       offset
     });
     
-    // Get rating statistics
     const stats = await Review.getRatingStats(providerId);
     
     res.json({
