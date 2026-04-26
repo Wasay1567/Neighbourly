@@ -74,6 +74,15 @@ class Booking {
         b.total_amount, b.status, b.created_at,
         sl.title as service_title,
         sl.slug as service_slug,
+        EXISTS (
+          SELECT 1
+          FROM reviews rv
+          WHERE rv.booking_id = b.id
+            AND (
+              rv.reviewer_id = $1
+              OR (rv.reviewee_id = $1 AND rv.response IS NOT NULL)
+            )
+        ) AS has_review,
         CASE 
           WHEN b.seeker_id = $1 THEN sp.first_name || ' ' || sp.last_name
           ELSE ss.first_name || ' ' || ss.last_name
@@ -139,21 +148,59 @@ class Booking {
 
   // Cancel booking
   static async cancel(id, userId, reason) {
-    const result = await query(
-      `UPDATE bookings 
-       SET status = 'cancelled',
-           cancelled_by = $2,
-           cancelled_at = CURRENT_TIMESTAMP,
-           cancellation_reason = $3,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1 
-         AND (seeker_id = $2 OR provider_id = $2)
-         AND status IN ('pending', 'confirmed')
-       RETURNING *`,
-      [id, userId, reason]
-    );
-    
-    return result.rows[0];
+    return transaction(async (client) => {
+      const bookingResult = await client.query(
+        `SELECT b.*,
+                c.reason as cancellation_reason,
+                c.cancelled_by as cancellation_cancelled_by,
+                c.cancelled_at as cancellation_cancelled_at
+         FROM bookings b
+         LEFT JOIN cancellations c ON b.cancellation_id = c.id
+         WHERE b.id = $1
+           AND (b.seeker_id = $2 OR b.provider_id = $2)
+         FOR UPDATE`,
+        [id, userId]
+      );
+
+      const booking = bookingResult.rows[0];
+
+      if (!booking) {
+        return undefined;
+      }
+
+      if (booking.status === 'cancelled') {
+        return booking;
+      }
+
+      if (!['pending', 'confirmed'].includes(booking.status)) {
+        return undefined;
+      }
+
+      const cancellationResult = await client.query(
+        `INSERT INTO cancellations (reason, cancelled_by)
+         VALUES ($1, $2)
+         RETURNING id, reason, cancelled_by, cancelled_at, created_at`,
+        [reason || null, userId]
+      );
+
+      const cancellation = cancellationResult.rows[0];
+
+      const updatedBookingResult = await client.query(
+        `UPDATE bookings 
+         SET status = 'cancelled',
+             cancellation_id = $2,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [id, cancellation.id]
+      );
+
+      return {
+        cancellation_reason: cancellation.reason,
+        cancellation_cancelled_by: cancellation.cancelled_by,
+        cancellation_cancelled_at: cancellation.cancelled_at
+      };
+    });
   }
 
   // Get available time slots
