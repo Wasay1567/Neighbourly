@@ -1,5 +1,12 @@
 const Service = require('../models/service');
 const { AppError } = require('../utils/errors');
+const cache = require('../utils/cache');
+
+// Helper to invalidate service-related caches
+const invalidateServiceCaches = async () => {
+  await cache.invalidateByPattern('services:nearby:*');
+  await cache.invalidateByPattern('services:search:*');
+};
 
 // Create new service
 exports.createService = async (req, res, next) => {
@@ -8,6 +15,9 @@ exports.createService = async (req, res, next) => {
       ...req.body,
       providerId: req.user.id
     });
+    
+    // Invalidate caches
+    await invalidateServiceCaches();
     
     res.status(201).json({
       success: true,
@@ -30,6 +40,18 @@ exports.getNearbyServices = async (req, res, next) => {
     
     const offset = (page - 1) * limit;
     
+    // Create a stable cache key using rounded coordinates (approx 110m precision at 3 decimals)
+    const cacheKey = `services:nearby:${parseFloat(lat).toFixed(3)}:${parseFloat(lng).toFixed(3)}:${parseFloat(radius)}:${categoryId || 'all'}:${minPrice || '0'}:${maxPrice || 'inf'}:${page}:${limit}`;
+    
+    // Try to get from cache
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json({
+        ...cached,
+        source: 'cache'
+      });
+    }
+    
     const services = await Service.findNearby(
       parseFloat(lat),
       parseFloat(lng),
@@ -43,16 +65,24 @@ exports.getNearbyServices = async (req, res, next) => {
       }
     );
     
-    res.json({
+    const responseData = {
       success: true,
       data: {
         services,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: services.length
+          total: services.length // Note: This should ideally be a total count from DB, but keeping existing logic
         }
       }
+    };
+    
+    // Cache for 1 hour (3600s) - safe due to active invalidation
+    await cache.set(cacheKey, responseData, 3600);
+    
+    res.json({
+      ...responseData,
+      source: 'database'
     });
   } catch (error) {
     next(error);
@@ -69,6 +99,15 @@ exports.searchServices = async (req, res, next) => {
     }
     
     const offset = (page - 1) * limit;
+    const cacheKey = `services:search:${q}:${categoryId || 'all'}:${page}:${limit}`;
+    
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json({
+        ...cached,
+        source: 'cache'
+      });
+    }
     
     const services = await Service.search(q, {
       categoryId: categoryId ? parseInt(categoryId) : undefined,
@@ -76,7 +115,7 @@ exports.searchServices = async (req, res, next) => {
       offset
     });
     
-    res.json({
+    const responseData = {
       success: true,
       data: {
         services,
@@ -86,6 +125,13 @@ exports.searchServices = async (req, res, next) => {
           total: services.length
         }
       }
+    };
+    
+    await cache.set(cacheKey, responseData, 3600); // Cache search for 1 hour
+    
+    res.json({
+      ...responseData,
+      source: 'database'
     });
   } catch (error) {
     next(error);
@@ -95,6 +141,18 @@ exports.searchServices = async (req, res, next) => {
 // Get service by ID
 exports.getService = async (req, res, next) => {
   try {
+    const cacheKey = `services:detail:${req.params.id}`;
+    
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      // Still increment views even if served from cache
+      Service.incrementViews(req.params.id).catch(() => {});
+      return res.json({
+        ...cached,
+        source: 'cache'
+      });
+    }
+    
     const service = await Service.findById(req.params.id);
     
     if (!service) {
@@ -104,9 +162,16 @@ exports.getService = async (req, res, next) => {
     // Increment view count (fire and forget)
     Service.incrementViews(service.id).catch(() => {});
     
-    res.json({
+    const responseData = {
       success: true,
       data: { service }
+    };
+    
+    await cache.set(cacheKey, responseData, 3600); // Cache details for 1 hour
+    
+    res.json({
+      ...responseData,
+      source: 'database'
     });
   } catch (error) {
     next(error);
@@ -150,6 +215,10 @@ exports.updateService = async (req, res, next) => {
       throw new AppError('Service not found or unauthorized', 404);
     }
     
+    // Invalidate caches
+    await invalidateServiceCaches();
+    await cache.del(`services:detail:${req.params.id}`);
+    
     res.json({
       success: true,
       message: 'Service updated successfully',
@@ -168,6 +237,10 @@ exports.deleteService = async (req, res, next) => {
     if (!service) {
       throw new AppError('Service not found or unauthorized', 404);
     }
+    
+    // Invalidate caches
+    await invalidateServiceCaches();
+    await cache.del(`services:detail:${req.params.id}`);
     
     res.json({
       success: true,

@@ -1,7 +1,7 @@
 const { query, transaction } = require('../config/database');
 const h3Service = require('../services/h3Service');
 const slugify = require('slugify');
-
+const redis= require('../config/redis');
 class Service {
   // Create service with address
   static async create({ 

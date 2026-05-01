@@ -8,6 +8,11 @@ const transactionRoutes = require('./transactions');
 const disputeRoutes = require('./disputes');
 const reviewRoutes = require('./reviews');
 const locationRoutes = require('./locations');
+const { minuteLimiter, dayLimiter } = require('../middleware/rateLimiter');
+
+// Apply rate limiting to all routes
+router.use(dayLimiter);
+router.use(minuteLimiter);
 
 // Mount routes
 router.use('/auth', authRoutes);
