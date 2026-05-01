@@ -50,9 +50,13 @@ jobs:
         id: terraform_output
         working-directory: ./infra
         run: |
-          IP=$(terraform output -raw ec2_public_ip 2>&1 | grep -v "Warning\|│" | tail -1)
-          echo $IP
+          IP=$(terraform output -json 2>/dev/null | jq -r '.ec2_public_ip.value')
+          if [[ -z "$IP" || "$IP" == "null" ]]; then
+            echo "Error: Failed to get EC2 IP from Terraform"
+            exit 1
+          fi
           echo "ec2_public_ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "Extracted IP: $IP"
 
   deploy:
     needs: provision-infrastructure
