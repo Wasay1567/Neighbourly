@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "@/features/userSlice.js";
@@ -8,12 +8,25 @@ import toast from "react-hot-toast";
 const VerifyOTP = () => {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60); // Timer state
+  const [isResending, setIsResending] = useState(false);
+
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Retrieve email passed from Login/Register state
   const email = location.state?.email;
+
+  // Countdown Logic
+  useEffect(() => {
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -24,7 +37,6 @@ const VerifyOTP = () => {
       const response = await api.post("/auth/verify-otp", { email, otp });
       const { user, token } = response.data.data;
 
-      // SUCCESS: Save token and update Redux
       localStorage.setItem("token", token);
       
       const normalizedUser = {
@@ -40,6 +52,21 @@ const VerifyOTP = () => {
       toast.error(err.response?.data?.message || "Invalid or expired OTP");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (resendTimer > 0 || isResending) return;
+
+    setIsResending(true);
+    try {
+      await api.post("/auth/resend-otp", { email }); // Ensure endpoint matches your backend
+      toast.success("A new OTP has been sent to your email");
+      setResendTimer(60); // Reset the 60s timer
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -68,6 +95,23 @@ const VerifyOTP = () => {
             {isLoading ? "Verifying..." : "Verify & Log In"}
           </button>
         </form>
+
+        <div className="mt-8">
+          <p className="text-gray-600">
+            Didn't receive the code?
+          </p>
+          <button
+            onClick={handleResendOTP}
+            disabled={resendTimer > 0 || isResending}
+            className="mt-2 text-emerald-600 font-semibold hover:text-emerald-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isResending 
+              ? "Sending..." 
+              : resendTimer > 0 
+                ? `Resend in ${resendTimer}s` 
+                : "Resend Code"}
+          </button>
+        </div>
       </div>
     </div>
   );
