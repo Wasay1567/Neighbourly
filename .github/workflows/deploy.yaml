@@ -50,11 +50,25 @@ jobs:
         id: terraform_output
         working-directory: ./infra
         run: |
-          IP=$(terraform output -json 2>/dev/null | jq -r '.ec2_public_ip.value')
+          set -euo pipefail
+
+          # Get JSON output (do not hide errors)
+          OUT_JSON="$(terraform output -json)"
+
+          # Validate JSON early (gives a clearer error than the current failure)
+          echo "$OUT_JSON" | jq -e . >/dev/null
+
+          # Support both shapes:
+          # - {"ec2_public_ip":{"value":"x.x.x.x", ...}}
+          # - {"ec2_public_ip":"x.x.x.x"}
+          IP="$(echo "$OUT_JSON" | jq -r '.ec2_public_ip.value // .ec2_public_ip // empty')"
+
           if [[ -z "$IP" || "$IP" == "null" ]]; then
-            echo "Error: Failed to get EC2 IP from Terraform"
+            echo "Error: Failed to get ec2_public_ip from Terraform outputs"
+            echo "$OUT_JSON"
             exit 1
           fi
+
           echo "ec2_public_ip=$IP" >> "$GITHUB_OUTPUT"
           echo "Extracted IP: $IP"
 
