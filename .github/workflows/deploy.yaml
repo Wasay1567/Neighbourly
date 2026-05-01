@@ -50,7 +50,8 @@ jobs:
         id: terraform_output
         working-directory: ./infra
         run: |
-          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
+          terraform output -raw ec2_public_ip > /tmp/ec2_ip.txt 2>/dev/null
+          echo "ec2_public_ip=$(cat /tmp/ec2_ip.txt)" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: provision-infrastructure
