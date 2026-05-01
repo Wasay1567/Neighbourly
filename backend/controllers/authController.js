@@ -97,6 +97,41 @@ exports.login = async (req, res, next) => {
   }
 };
 
+exports.resendOTP = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw new AppError('Email is required', 400);
+    }
+
+    // 1. Find the user
+    const user = await User.findByEmail(email);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // 2. Generate a fresh 6-digit OTP
+    const newOtp = generateOTP();
+    // 3. Reset expiry to 10 minutes from now
+    const otpExpires = new Date(Date.now() + 10 * 60000);
+
+    // 4. Update the database using your existing updateOTP helper
+    await User.updateOTP(user.id, newOtp, otpExpires);
+
+    // 5. Send the new code via email
+    await sendOTP(email, newOtp);
+
+    // 6. Send success response
+    res.status(200).json({
+      success: true,
+      message: 'A new verification code has been sent to your email.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Verify OTP (New Method)
 exports.verifyOTP = async (req, res, next) => {
   try {

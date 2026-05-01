@@ -164,3 +164,146 @@
   "path": "/api/v1/auth/login",
   "method": "POST"
 }
+2026-04-19 14:25:49:2549 [ERROR]: Unexpected database pool error {
+  "error": "terminating connection due to administrator command"
+}
+2026-04-19 15:32:50:3250 [ERROR]: Query execution error {
+  "text": "SELECT DISTINCT u.id \n         FROM users u\n         LEFT JOIN bookings b ON (u.id = b.provider_id O",
+  "error": "getaddrinfo EAI_AGAIN postgres",
+  "params": 0
+}
+2026-04-19 15:32:50:3250 [ERROR]: Reputation cron job failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-22 10:15:17:1517 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-22 10:15:25:1525 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:15:32:1532 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:15:40:1540 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:15:47:1547 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:15:55:1555 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:16:03:163 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:16:15:1615 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:16:33:1633 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:17:04:174 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:18:00:180 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:19:05:195 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:20:10:2010 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:21:16:2116 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:22:21:2221 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:23:26:2326 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:24:31:2431 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:25:37:2537 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:26:42:2642 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:27:47:2747 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:28:52:2852 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:29:57:2957 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:31:03:313 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:32:08:328 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:33:13:3313 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-22 10:34:18:3418 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:56:19:5619 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-23 13:56:27:5627 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:56:34:5634 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:56:42:5642 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:56:49:5649 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:56:57:5657 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:57:05:575 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:57:17:5717 [ERROR]: Database connection failed {
+  "error": "getaddrinfo EAI_AGAIN postgres"
+}
+2026-04-23 13:57:35:5735 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:58:06:586 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 13:59:02:592 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 14:00:07:07 [ERROR]: Database connection failed {
+  "error": "getaddrinfo ENOTFOUND postgres"
+}
+2026-04-23 14:08:23:823 [ERROR]: Transaction rolled back {
+  "error": "duplicate key value violates unique constraint \"users_phone_key\""
+}
+2026-04-23 14:08:23:823 [ERROR]: duplicate key value violates unique constraint "users_phone_key" {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-23 14:08:54:854 [ERROR]: Could not send verification email. {
+  "statusCode": 500,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
+2026-04-23 14:09:16:916 [ERROR]: Email already registered {
+  "statusCode": 409,
+  "path": "/api/v1/auth/register",
+  "method": "POST"
+}
