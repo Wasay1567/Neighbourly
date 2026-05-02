@@ -6,14 +6,14 @@ terraform {
     }
   }
 
-  required_version = ">= 1.2"
+  required_version = "~> 1.15.0"
 
   backend "s3" {
-    bucket         = "neighbourly-infra-tf-state"
-    key            = "global/s3/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-state-lock-table"
-    encrypt        = true
+    bucket       = "neighbourly-infra-tf-state"
+    key          = "global/s3/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 

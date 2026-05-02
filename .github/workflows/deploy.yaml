@@ -31,7 +31,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: latest
+          terraform_version: 1.15.1
           terraform_wrapper: false
 
       - name: Terraform Init
@@ -50,24 +50,7 @@ jobs:
         id: terraform_output
         working-directory: ./infra
         run: |
-          set -euo pipefail
-
-          # Get JSON output (do not hide errors)
-          OUT_JSON="$(terraform output -json)"
-
-          # Validate JSON early (gives a clearer error than the current failure)
-          echo "$OUT_JSON" | jq -e . >/dev/null
-
-          # Support both shapes:
-          # - {"ec2_public_ip":{"value":"x.x.x.x", ...}}
-          # - {"ec2_public_ip":"x.x.x.x"}
-          IP="$(echo "$OUT_JSON" | jq -r '.ec2_public_ip.value // .ec2_public_ip // empty')"
-
-          if [[ -z "$IP" || "$IP" == "null" ]]; then
-            echo "Error: Failed to get ec2_public_ip from Terraform outputs"
-            echo "$OUT_JSON"
-            exit 1
-          fi
+          IP=$(terraform output -raw ec2_public_ip)
 
           echo "ec2_public_ip=$IP" >> "$GITHUB_OUTPUT"
           echo "Extracted IP: $IP"
