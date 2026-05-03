@@ -32,6 +32,10 @@ chmod 660 /var/run/docker.sock
 
 echo "Docker and Compose V2 installation complete for user: ubuntu"
 
+sudo apt install unzip curl -y
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
 
 # Create backup script
 sudo tee /usr/local/bin/backup-postgres.sh > /dev/null <<'EOF'

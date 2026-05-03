@@ -40,11 +40,11 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ./infra
-        run: terraform plan -out=tfplan
+        run: terraform plan -lock=false -out=tfplan
 
       - name: Terraform Apply
         working-directory: ./infra
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -lock=false -auto-approve tfplan
 
       - name: Get Terraform Outputs
         id: terraform_output
