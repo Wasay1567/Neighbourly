@@ -8,6 +8,7 @@ const asyncHandler = require('../utils/asyncHandler');
 router.post('/register', asyncHandler(authController.register));
 router.post('/login', asyncHandler(authController.login));
 router.post('/verify-otp', asyncHandler(authController.verifyOTP));
+router.post('/resend-otp', asyncHandler(authController.resendOTP));
 
 // Protected routes
 router.get('/me', authenticate, asyncHandler(authController.getMe));
