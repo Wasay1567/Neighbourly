@@ -1,5 +1,6 @@
 {
   "name": "vite-react-tailwind",
+  "homepage": "https://Wasay1567.github.io/Neighbourly/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,11 +8,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.2",
+    "gh-pages": "^6.3.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
