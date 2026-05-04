@@ -39,9 +39,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
       - /app/node_modules
+    networks:
+      - neighbourly_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: neighbourly_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
     networks:
       - neighbourly_network
 
