@@ -2,7 +2,7 @@ const { rateLimit } = require('express-rate-limit');
 
 const minuteLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    limit: 50,
+    limit: 300,
     message: (req, res) => {
         const seconds = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
         return {
@@ -21,7 +21,7 @@ const minuteLimiter = rateLimit({
 
 const dayLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000, // 1 day
-    limit: 500,
+    limit: 10000,
     message: (req, res) => {
         const seconds = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
         return {
