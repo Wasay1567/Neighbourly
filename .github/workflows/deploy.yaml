@@ -1,0 +1,101 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+      
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  provision-infrastructure:
+    runs-on: ubuntu-latest
+    outputs:
+      ec2_host: ${{ steps.terraform_output.outputs.ec2_public_ip }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.1
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./infra
+        run: terraform plan -lock=false -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        run: terraform apply -lock=false -auto-approve tfplan
+
+      - name: Get Terraform Outputs
+        id: terraform_output
+        working-directory: ./infra
+        run: |
+          IP=$(terraform output -raw ec2_public_ip)
+
+          echo "ec2_public_ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "Extracted IP: $IP"
+
+  deploy:
+    needs: provision-infrastructure
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+        with:
+          host: ${{ needs.provision-infrastructure.outputs.ec2_host }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ENV_FILE
+
+          script: |
+
+            set -e
+
+            cd $HOME/Neighbourly || {
+              git clone https://github.com/Wasay1567/Neighbourly.git $HOME/Neighbourly
+              cd $HOME/Neighbourly
+            }
+
+            # Update code
+            git fetch origin
+            git reset --hard origin/main
+
+            # Always update env
+            printf '%s\n' "$ENV_FILE" > .env
+
+            # Check migration changes
+            if git diff --name-only HEAD~1 HEAD | grep -qE 'migrations'; then
+              echo "Migration changes detected → full reset"
+              docker compose down -v
+              docker compose up -d --build
+            else
+              echo "No migration changes → updating backend only"
+              docker compose up -d --build backend
+            fi

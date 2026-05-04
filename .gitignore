@@ -1,0 +1,13 @@
+.env
+.vscode
+node_modules
+.DS_Store
+coverage
+npm-debug.log
+yarn-error.log
+logs.txt
+temp.txt
+neighbourly-key
+.terraform/
+.terraform.lock.hcl
+*.tfstate
